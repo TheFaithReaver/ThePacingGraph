@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Interactive Pacing Graph — v3.6.3 (bugfixes + consistent decay)</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    :root{
+      --bg:#0d0f1a; --panel:#141829; --panel-2:#1a2140; --ink:#e8ecf3; --muted:#9aa4bd;
+      --accent:#6d5ef3; --accent-2:#24c8db; --danger:#ff5470; --ok:#2dd4bf;
+      --grid:#253053; --stroke:#2e3866; --chip:#212849; --chip-2:#1b203e; --marker:#ffa500;
+    }
+    html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,Segoe UI,Roboto,Arial,sans-serif}
+    .wrap{display:grid;grid-template-rows:auto 1fr auto;min-height:100%}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--stroke)}
+    header h1{font-size:16px;margin:0;font-weight:600}
+    .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .btn{padding:6px 10px;border:1px solid var(--stroke);background:var(--chip);color:var(--ink);border-radius:8px;cursor:pointer}
+    .btn:hover{background:var(--chip-2)}
+    .btn.danger{border-color:#6a2330;background:#36111a}
+    main{display:grid;grid-template-columns:1.25fr .95fr;gap:12px;padding:12px}
+    .card{background:var(--panel-2);border:1px solid var(--stroke);border-radius:12px;overflow:hidden}
+    .card h3{margin:0;padding:10px 12px;border-bottom:1px solid var(--stroke);font-size:13px;letter-spacing:.3px;background:var(--panel)}
+    .chart{height:500px}
+    svg{width:100%;height:100%;display:block}
+    .grid line{stroke:var(--grid);stroke-width:1;shape-rendering:crispEdges}
+    .axis path,.axis line{stroke:var(--stroke)}
+    .axis text{fill:var(--muted)}
+    .zero line{stroke:#32406f;stroke-dasharray:4 4}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-top:1px solid var(--stroke);padding:8px}
+    thead th{position:sticky;top:0;background:var(--panel);text-align:left;font-weight:600;z-index:1}
+    tbody tr:hover{background:#1f2851}
+    input[type="number"], input[type="text"]{width:100%;box-sizing:border-box;background:#131833;border:1px solid var(--stroke);color:var(--ink);padding:6px;border-radius:6px}
+    input[type=range]{width:100%}
+    .legend{display:flex;gap:10px;padding:8px 12px;flex-wrap:wrap}
+    .dot{width:10px;height:10px;border-radius:50%}
+    .pill{display:inline-flex;gap:6px;align-items:center;padding:2px 8px;border:1px solid var(--stroke);border-radius:999px;background:#141a33}
+    .muted{color:var(--muted)}
+    #testbox{font-size:12px;color:var(--muted);padding:6px 12px}
+    .muted-strong{color:var(--muted); font-weight:600}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Interactive Pacing Graph — v3.6.3</h1>
+      <div class="bar">
+        <button class="btn" id="exportJSON">Export JSON</button>
+        <label class="btn">Import JSON <input type="file" id="importJSON" accept="application/json" hidden></label>
+        <button class="btn" id="addTrack">+ Track</button>
+        <select class="btn" id="activeTrack"></select>
+        <button class="btn" id="zoomReset">Reset View</button>
+        <button class="btn danger" id="resetAll">Reset</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="card chart">
+        <h3>Pacing Graph</h3>
+        <div class="legend">
+          <span class="pill"><span class="dot" style="background:#ffffff"></span><span>Story point (drag)</span></span>
+          <span class="pill"><span class="dot" style="background:#2dd4bf"></span><span>Target envelope</span></span>
+          <span class="pill"><span class="dot" style="background:#ffa500"></span><span>Average trend</span></span>
+          <span class="muted">Envelope sliders move the green band. Y-axis always includes envelope + 0 baseline and at least −0.10 below zero.</span>
+        </div>
+        <svg id="svg" viewBox="0 0 960 500" preserveAspectRatio="xMidYMid meet"></svg>
+        <div id="testbox"></div>
+      </section>
+
+      <section class="card">
+        <h3>Timeline</h3>
+        <div style="padding:10px 12px;display:grid;grid-template-columns:1fr 70px;gap:8px;align-items:center">
+          <label>Timeline Scale (view only) <input type="range" id="timeScale" min="0.5" max="12" step="0.01" value="1"></label>
+          <input type="number" id="timeScaleVal" min="0.5" max="12" step="0.01" value="1">
+        </div>
+
+        <h3>Target Envelope</h3>
+        <div style="padding:10px 12px;display:grid;grid-template-columns:1fr 90px 1fr 90px;gap:8px;align-items:center">
+          <label>Min intensity <input type="range" id="envMin" min="-2" max="2" step="0.01" value="0.3"></label>
+          <input type="number" id="envMinVal" value="0.3" step="0.01">
+          <label>Max intensity <input type="range" id="envMax" min="-2" max="2" step="0.01" value="0.9"></label>
+          <input type="number" id="envMaxVal" value="0.9" step="0.01">
+        </div>
+
+        <h3>Controls</h3>
+        <div style="padding:10px 12px;display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center">
+          <label><span id="decayLabelText" class="muted-strong">Global Decay</span> <input type="range" id="decay" min="-0.05" max="0.05" step="0.001" value="0"></label>
+          <input type="number" id="decayVal" value="0" step="0.001">
+        </div>
+
+        <div style="padding:10px 12px;display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center">
+          <label>Track Multiplier <input type="range" id="mult" min="0" max="2" step="0.01" value="1"></label>
+          <input type="number" id="multVal" value="1" step="0.01">
+        </div>
+
+        <h3>Tracks</h3>
+        <div style="padding:10px 12px">
+          <label class="pill" title="Hide other visible tracks while editing a specific track">
+            <input type="checkbox" id="soloToggle" style="margin-right:6px"> Solo active track (hide others)
+          </label>
+
+          <!-- Track-tab toggle to include global decay for lines -->
+          <label class="pill" id="includeGlobalWrap" title="In Track tabs: if ON, lines & dots use (global + track) decay like in Total; if OFF, they use track-only decay.">
+            <input type="checkbox" id="includeGlobalInTrack" style="margin-right:6px">
+            Include global decay (Track tab)
+          </label>
+
+          <label class="pill" title="Fade lines to emphasize the orange trend">
+            <input type="checkbox" id="highlightTrend" style="margin-right:6px">
+            Highlight trend (fade others)
+          </label>
+
+          <label class="pill" title="Toggle the orange trend line">
+            <input type="checkbox" id="showTrend" style="margin-right:6px" checked>
+            Show average trend (All tracks in Track view)
+          </label>
+
+          <table id="tracksTable" style="margin-top:8px">
+            <thead><tr><th style="width:40%">Name</th><th style="width:20%">Color</th><th style="width:20%">Visible</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <small class="muted">Select <b>Total (view all)</b> to view all tracks together. Editing is disabled in Total.</small>
+        </div>
+
+        <div id="spSection">
+          <h3>Story Points</h3>
+          <div style="padding:10px 12px;display:flex;gap:8px;align-items:center">
+            <button class="btn" id="addSP">+ Point</button>
+          </div>
+          <div id="spScroll" style="max-height:none;overflow:auto">
+            <table id="spTable">
+              <thead><tr><th style="width:34%">Name</th><th style="width:18%">Time</th><th style="width:34%">Weight</th><th style="width:14%"></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <h3>Markers</h3>
+        <div style="padding:10px 12px">
+          <button class="btn" id="addMarker">+ Marker</button>
+          <small style="color:var(--muted);display:block;margin-top:6px">Tip: Click the chart to add a marker at that time.</small>
+          <table id="mkTable" style="margin-top:8px">
+            <thead><tr><th style="width:18%">Time</th><th style="width:66%">Label</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer style="padding:10px 16px;color:var(--muted);border-top:1px solid var(--stroke);background:var(--panel)">
+      Tip: Drag white circles to tweak time/weight. Pan/zoom inside the plot. Envelope sliders always visible; display auto-expands to include them and 0 with a small bottom pad.
+    </footer>
+  </div>
+
+<script>
+(function(){
+  // ---------- constants ----------
+  const FIXED_BOTTOM_PAD = 0.10; // keep at least -0.10 under zero
+
+  // ---------- State upgrade ----------
+  function upgrade(s){
+    s = s || {};
+    if(typeof s.decay !== 'number') s.decay = 0; // GLOBAL DECAY
+    s.envelope = s.envelope || {min:0.3, max:0.9};
+    s.tracks   = Array.isArray(s.tracks) ? s.tracks : [];
+    s.markers  = Array.isArray(s.markers) ? s.markers : [];
+    s.settings = s.settings || {};
+    if (typeof s.settings.solo !== 'boolean') s.settings.solo = true; // default ON
+    if (typeof s.settings.highlightTrend !== 'boolean') s.settings.highlightTrend = false;
+    if (typeof s.settings.showTrend !== 'boolean') s.settings.showTrend = true;
+    // per‑track defaults
+    s.tracks.forEach(t => {
+      if (typeof t.mult !== 'number') t.mult = 1;
+      if (typeof t.decay !== 'number') t.decay = 0; // TRACK DECAY
+    });
+    // Fixed Y rules (always on), bottom pad fixed at 0.10
+    s.view = s.view || {};
+    s.view.yIncludeEnv = true;
+    s.view.yAlwaysZero = true;
+    s.view.yBottomPad  = FIXED_BOTTOM_PAD;
+    if (typeof s.view.trackIncludeGlobal !== 'boolean') s.view.trackIncludeGlobal = false;
+    return s;
+  }
+
+  // --- initial state (example preset) ---------------------
+  let state = upgrade(JSON.parse(localStorage.getItem('pacing_state_v3')||'null')) || upgrade({
+    decay: 0,
+    envelope: { min: 0.3, max: 0.9 },
+    tracks: [
+      { name: 'Narrative', color: '#48d0e5', visible: true, mult: 1, decay:0, storyPoints: [
+          {name: 'Meet Baron', time: 0,   weight: 0.6},
+          {name: 'Family Backstory', time: 2, weight: 0.7},
+          {name: 'Reveal Ciri', time: 4, weight: 0.8},
+          {name: 'Find Anna', time: 7, weight: 1.0},
+          {name: 'Resolution', time: 9, weight: 0.9}
+        ]},
+      { name: 'Combat', color: '#ff7aa9', visible: true, mult: 1, decay:0, storyPoints: [
+          {name: 'Bandit Skirmish', time: 1, weight: 0.5},
+          {name: 'Botchling Encounter', time: 3, weight: 0.7},
+          {name: "Fight at Crow's Perch", time: 6, weight: 0.8},
+          {name: 'Final Battle', time: 8, weight: 1.0}
+        ]},
+      { name: 'Objectives', color: '#e6e6e6', visible: true, mult: 1, decay:0, storyPoints: [
+          {name: 'Talk to Baron', time: 0, weight: 0.4},
+          {name: 'Search the Premises', time: 1.5, weight: 0.6},
+          {name: 'Investigate Village', time: 4, weight: 0.7},
+          {name: 'Locate Anna', time: 6.5, weight: 0.9},
+          {name: 'Return to Baron', time: 9, weight: 0.8}
+        ]}
+    ],
+    markers: [],
+    settings: { solo: true, highlightTrend:false, showTrend:true },
+    view: { yIncludeEnv:true, yAlwaysZero:true, yBottomPad: FIXED_BOTTOM_PAD }
+  });
+  localStorage.setItem('pacing_state_v3', JSON.stringify(state));
+
+  // ---------- SVG + layers ----------
+  const svg = d3.select('#svg');
+  const g   = svg.append('g').attr('transform','translate(48,16)');
+  const W=960-48-16, H=500-16-44;
+
+  const x0 = d3.scaleLinear().range([0,W]); // base scale (data domain)
+  let transform = d3.zoomIdentity;          // current zoom/pan transform
+  let x = x0.copy();                         // view scale (rescaled by transform)
+  const y = d3.scaleLinear().range([H,0]);
+
+  const xAxis = g.append('g').attr('class','axis').attr('transform',`translate(0,${H})`);
+  const yAxis = g.append('g').attr('class','axis');
+  const gx = g.append('g').attr('class','grid');
+  const gy = g.append('g').attr('class','grid');
+  const zero = g.append('g').attr('class','zero');
+  const env = g.append('g').attr('class','envelope');
+  const dots = g.append('g');
+  const tracksG = g.append('g').attr('class','tracks');
+  const trendG = g.append('g').attr('class','trend');
+  const markersG = g.append('g').attr('class','markers');
+  const hoverG = g.append('g').attr('class','hover');
+  const tooltipG = g.append('g').attr('class','tooltip');
+
+  // Clip to the plot rect
+  const clip = g.append('clipPath').attr('id','plot-clip').attr('clipPathUnits','userSpaceOnUse');
+  clip.append('rect').attr('x',0).attr('y',0).attr('width',W).attr('height',H);
+  ;[env,dots,tracksG,trendG,markersG,hoverG,tooltipG].forEach(sel=> sel.attr('clip-path','url(#plot-clip)'));
+
+  // ---------- helpers ----------
+  const clamp=(v,min,max)=> Math.max(min, Math.min(max, v));
+  const save=()=> localStorage.setItem('pacing_state_v3', JSON.stringify(state));
+  const getActiveIndex=()=>{ const sel=document.getElementById('activeTrack'); return sel && sel.value==='TOTAL' ? -1 : +sel.value||0; };
+  const getActiveTrack=()=>{ const i=getActiveIndex(); return i<0? null : state.tracks[i]; };
+
+  const computeTrack=(track, mode)=>{
+    const m = (typeof track.mult === 'number') ? track.mult : 1;
+    let dcy = 0;
+    if (mode==='combined') {
+      // additive combine: global + per-track
+      dcy = (state.decay||0) + (track.decay||0);
+    } else if (mode==='global') {
+      dcy = (state.decay||0);
+    } else { // 'per'
+      dcy = (track.decay||0);
+    }
+    return (track.storyPoints||[]).slice().sort((a,b)=>a.time-b.time)
+      .map((d,i)=>({time:d.time, intensity:(d.weight*m) + dcy*d.time, label:d.name, i, type:'story'}));
+  };
+  const computeAllVisible=(mode)=> state.tracks.filter(t=>t.visible).map(t=>({track:t,data:computeTrack(t, mode)}));
+  const computeAllTracks=(mode)=> state.tracks.map(t=>({track:t,data:computeTrack(t, mode)}));
+  function computeOverlayGrid(useAll=false, mode='global'){
+    const bundles = useAll ? computeAllTracks(mode) : computeAllVisible(mode);
+    const times = new Set();
+    bundles.forEach(b=>b.data.forEach(p=>times.add(+p.time.toFixed(3))));
+    const xs = Array.from(times).sort((a,b)=>a-b);
+    const series = bundles.map(b=> xs.map(t=> interpAt(b.data,t)) );
+    return {xs, series};
+    function interpAt(data,t){
+      if(!data.length) return 0;
+      if(t<=data[0].time) return data[0].intensity;
+      if(t>=data[data.length-1].time) return data[data.length-1].intensity;
+      for(let i=0;i<data.length-1;i++){
+        const a=data[i], b=data[i+1];
+        if(t>=a.time && t<=b.time){ const u=(t-a.time)/(b.time-a.time||1); return a.intensity*(1-u)+b.intensity*u; }
+      }
+      return 0;
+    }
+  }
+
+  // ---------- Tooltip ----------
+  function showTooltip(px, py, text){
+    tooltipG.selectAll('*').remove();
+    tooltipG.append('text')
+      .attr('x', px).attr('y', py-10)
+      .attr('text-anchor','middle')
+      .attr('fill', 'var(--ink)')
+      .attr('stroke', '#000').attr('stroke-width', 3).attr('paint-order','stroke')
+      .style('font-size','12px').style('pointer-events','none')
+      .text(text);
+  }
+  const hideTooltip=()=> tooltipG.selectAll('*').remove();
+
+// Render hover dots for a given track, using same decay mode as its line.
+// Active track = larger white dots; non-active = smaller color-matched dots.
+function renderHoverDotsForTrack(track, mode){
+  hoverG.selectAll('*').remove();
+  if(!track) return;
+
+  const pts = computeTrack(track, mode); // time/intensity/label
+  const active = getActiveTrack();
+  const isActive = !!active && (active === track);
+  const dotR   = isActive ? 7 : 5;
+  const dotFill= isActive ? '#fff' : (track.color || '#ccc');
+
+  hoverG.selectAll('circle.hover-dot')
+    .data(pts, d=> 'h'+d.i)
+    .join('circle')
+      .attr('class','hover-dot')
+      .attr('r', dotR)
+      .attr('fill', dotFill)
+      .attr('stroke','#334')
+      .attr('cx', d=> x(d.time))
+      .attr('cy', d=> y(d.intensity))
+      .on('mouseenter', (e,d)=>{ showTooltip(x(d.time), y(d.intensity), d.label||''); })
+      .on('mouseleave', hideTooltip);
+}
+
+
+  // ---------- Zoom (inside plot only) ----------
+  const plotExtent = [[48, 16],[48+W, 16+H]];
+  const zoom = d3.zoom()
+    .scaleExtent([0.5, 20])
+    .translateExtent(plotExtent)
+    .extent(plotExtent)
+    .filter(function(event){
+      const p = d3.pointer(event, svg.node());
+      return p[0] >= plotExtent[0][0] && p[0] <= plotExtent[1][0] && p[1] >= plotExtent[0][1] && p[1] <= plotExtent[1][1];
+    })
+    .on('zoom', (ev)=>{
+      transform = ev.transform;
+      const k = Math.max(0.5, Math.min(20, transform.k));
+      d3.select('#timeScale').property('value', k);
+      d3.select('#timeScaleVal').property('value', k.toFixed(2));
+      update(true);
+    });
+  svg.call(zoom);
+
+  const programmaticScaleTo=(k)=> svg.transition().duration(150).call(zoom.scaleTo, k, [48+W/2, 16+H/2]);
+  const programmaticScaleBy=(f)=> svg.transition().duration(150).call(zoom.scaleBy, f, [48+W/2, 16+H/2]);
+  const programmaticReset=()=> svg.transition().duration(150).call(zoom.transform, d3.zoomIdentity);
+
+  // ---------- Render ----------
+  function update(keepTransform=false){
+    const active = getActiveTrack();
+    const isTotal = (active===null);
+
+    // X/Y domain from data (domain should reflect what you want to *see*).
+    // In Total: use all visible (combined). In Track tab:
+    //  - if includeGlobalInTrack is ON, frame like Total (combined across visible tracks)
+    //  - otherwise, frame by per‑track values of visible tracks.
+    let tExtent=[0,1];
+    const bundles = isTotal ? computeAllVisible('combined') : computeAllVisible('per'); // used later for drawing
+    const domainBundles = isTotal
+      ? computeAllVisible('combined')
+      : (state.view.trackIncludeGlobal ? computeAllVisible('combined') : computeAllVisible('per'));
+    const allPts = domainBundles.flatMap(b=>b.data);
+    if(allPts.length){ const te=d3.extent(allPts,d=>d.time); tExtent=[te[0],te[1]]; }
+    const tx=tExtent[1]-tExtent[0]||1; const pad = tx*0.05; x0.domain([Math.max(0,tExtent[0]-pad), tExtent[1]+pad]); x = transform.rescaleX(x0);
+
+    // Y domain from data, ALWAYS include envelope and 0 baseline, plus fixed -0.10 below 0
+    let yMin, yMax;
+    if(allPts.length){ yMin=d3.min(allPts,d=>d.intensity); yMax=d3.max(allPts,d=>d.intensity); }
+    else { yMin=0; yMax=1; }
+    yMin = Math.min(yMin, state.envelope.min, 0);
+    yMax = Math.max(yMax, state.envelope.max, 0);
+    const ty=(yMax-yMin)||1;
+    let bottom = yMin - ty*0.10; // 10% visual breathing room
+    let top    = yMax + ty*0.10;
+    bottom = Math.min(bottom, 0 - FIXED_BOTTOM_PAD); // at least -0.10 under zero
+    y.domain([bottom, top]).nice();
+
+    // Axes + grids
+    xAxis.call(d3.axisBottom(x));
+    yAxis.call(d3.axisLeft(y));
+    gx.call(d3.axisBottom(x).tickSize(H).tickFormat(''));
+    gy.call(d3.axisLeft(y).tickSize(-W).tickFormat(''));
+    zero.selectAll('line').data([0]).join('line').attr('x1',0).attr('x2',W).attr('y1',y(0)).attr('y2',y(0));
+
+    // Envelope band + guides
+    env.selectAll('*').remove();
+    const yTop = y(state.envelope.max), yBot = y(state.envelope.min);
+    env.append('rect').attr('x',0).attr('y',Math.min(yTop,yBot)).attr('width',W).attr('height',Math.abs(yBot-yTop))
+      .style('fill','var(--ok)').attr('opacity',0.16).style('stroke','var(--ok)').attr('stroke-opacity',0.35);
+    env.append('line').attr('x1',0).attr('x2',W).attr('y1',yTop).attr('y2',yTop).style('stroke','var(--ok)').style('stroke-dasharray','4,3').style('opacity',0.9);
+    env.append('line').attr('x1',0).attr('x2',W).attr('y1',yBot).attr('y2',yBot).style('stroke','var(--ok)').style('stroke-dasharray','4,3').style('opacity',0.9);
+
+    // Clear layers
+    tracksG.selectAll('*').remove(); trendG.selectAll('*').remove(); dots.selectAll('*').remove(); markersG.selectAll('*').remove(); hoverG.selectAll('*').remove(); hideTooltip();
+
+    const line = d3.line().curve(d3.curveCatmullRom.alpha(.6)).x(p=>x(p.time)).y(p=>y(p.intensity));
+
+    if(isTotal){
+      // TOTAL VIEW: draw visible tracks; trend respects visibility; GLOBAL decay applied (combined)
+      const fadeOthers = !!(state.settings && state.settings.highlightTrend);
+// One group per track: the visible line + an invisible wide "hit" path for easy hovering
+const trackLayers = tracksG.selectAll('g.track-layer')
+  .data(bundles, d=>d.track.name)
+  .join(enter=>{
+    const gEnter = enter.append('g').attr('class','track-layer');
+    gEnter.append('path').attr('class','track').attr('fill','none').attr('stroke-width',2.5);
+    gEnter.append('path').attr('class','track-hit').attr('fill','none')
+      .attr('stroke','rgba(0,0,0,0)').attr('stroke-width',18).style('pointer-events','stroke');
+    return gEnter;
+  });
+
+trackLayers.select('path.track')
+  .attr('stroke', d=>d.track.color)
+  .attr('opacity', fadeOthers ? 0.3 : 0.9)
+  .attr('d', d=>line(d.data));
+
+trackLayers.select('path.track-hit')
+  .attr('d', d=>line(d.data))
+  .on('mouseenter', (ev,d)=>{ renderHoverDotsForTrack(d.track, 'combined'); })
+  .on('mouseleave', (ev)=>{
+    const rt = ev.relatedTarget;
+    if(!(rt && rt.classList && (rt.classList.contains('hover-dot') || rt.classList.contains('track-hit')))){
+      hoverG.selectAll('*').remove(); hideTooltip();
+    }
+  });
+
+
+      if (state.settings.showTrend) {
+        const grid = computeOverlayGrid(false, 'combined'); // visible only, combined (global + per‑track) 
+        if(grid.xs.length && grid.series.length){
+          const mean = grid.xs.map((_,k)=> grid.series.reduce((s,arr)=>s+(arr[k]||0),0)/grid.series.length);
+          const meanLine = d3.line().x((d,i)=>x(grid.xs[i])).y(d=>y(d)).curve(d3.curveCatmullRom.alpha(.6));
+          trendG.append('path').attr('class','trend-line').attr('fill','none').attr('stroke','var(--marker)').attr('stroke-width',3.5).attr('stroke-dasharray','6,4').attr('d', meanLine(mean));
+        }
+      }
+
+    } else {
+      // TRACK VIEW: draw active or all visible depending on Solo; trend uses ALL tracks with COMBINED decay
+      const trackModeForLines = state.view.trackIncludeGlobal ? 'combined' : 'per';
+      const list = (state.settings && state.settings.solo)
+        ? [{ track: active, data: computeTrack(active, trackModeForLines) }]
+        : (trackModeForLines === 'per' ? bundles : computeAllVisible('combined'));
+      const fadeOthers = !!(state.settings && state.settings.highlightTrend);
+const trackLayers2 = tracksG.selectAll('g.track-layer')
+  .data(list, d=>d.track.name)
+  .join(enter=>{
+    const gEnter = enter.append('g').attr('class','track-layer');
+    gEnter.append('path').attr('class','track').attr('fill','none').attr('stroke-width',2.5);
+    gEnter.append('path').attr('class','track-hit').attr('fill','none')
+      .attr('stroke','rgba(0,0,0,0)').attr('stroke-width',18).style('pointer-events','stroke');
+    return gEnter;
+  });
+
+trackLayers2.select('path.track')
+  .attr('stroke', d=>d.track.color)
+  .attr('opacity', fadeOthers ? 0.3 : 0.9)
+  .attr('d', d=>line(d.data));
+
+trackLayers2.select('path.track-hit')
+  .attr('d', d=>line(d.data))
+  .on('mouseenter', (ev,d)=>{ renderHoverDotsForTrack(d.track, trackModeForLines); })
+  .on('mouseleave', (ev)=>{
+    const rt = ev.relatedTarget;
+    if(!(rt && rt.classList && (rt.classList.contains('hover-dot') || rt.classList.contains('track-hit')))){
+      hoverG.selectAll('*').remove(); hideTooltip();
+    }
+  });
+
+
+      // --- Story dots for ACTIVE track (respect includeGlobal toggle) ---
+      const dcyActive = state.view.trackIncludeGlobal ? ((state.decay||0) + (active.decay||0)) : (active.decay||0);
+      const mActive = (typeof active.mult === 'number') ? active.mult : 1;
+      const stories = active.storyPoints||[];
+      const storyDots = dots.selectAll('circle.story').data(stories, (_,i)=>'s'+i);
+      storyDots.join(enter=>enter.append('circle').attr('class','story').attr('r',7).attr('fill','#fff').attr('stroke','#334'
+        ).call(d3.drag()
+          .on('start', (ev)=>{ if(ev && ev.sourceEvent) ev.sourceEvent.stopPropagation(); })
+          .on('drag', (ev,d)=>{
+            const plotX = clamp(ev.x, 0, W), plotY = clamp(ev.y, 0, H);
+            const newTime = x.invert(plotX), newW = y.invert(plotY);
+            d.time=Math.round(newTime*100)/100; d.weight=Math.round(newW*100)/100; save(); renderTables(); update(true);
+          })
+        )
+      )
+      .attr('cx',(_,i)=>x(stories[i].time))
+      .attr('cy',(_,i)=>y((stories[i].weight*mActive)+ dcyActive*stories[i].time))
+      .on('mouseenter', (e,p)=>{ showTooltip(x(p.time), y((p.weight*mActive) + dcyActive*p.time), p.name||''); })
+      .on('mouseleave', hideTooltip);
+
+      if (state.settings.showTrend) {
+        const grid = computeOverlayGrid(true, 'combined'); // ALL tracks, combined (global + per‑track)
+        if(grid.xs.length && grid.series.length){
+          const mean = grid.xs.map((_,k)=> grid.series.reduce((s,arr)=>s+(arr[k]||0),0)/grid.series.length);
+          const meanLine = d3.line().x((d,i)=>x(grid.xs[i])).y(d=>y(d)).curve(d3.curveCatmullRom.alpha(.6));
+          trendG.append('path').attr('class','trend-line').attr('fill','none').attr('stroke','var(--marker)').attr('stroke-width',3.5).attr('stroke-dasharray','6,4').attr('d', meanLine(mean));
+        }
+      }
+    }
+
+    // Markers
+    if(state.markers && state.markers.length){
+      const gSel = markersG.selectAll('g.marker').data(state.markers, (d,i)=>i).join(enter=>{
+        const m = enter.append('g').attr('class','marker');
+        m.append('line').attr('class','mark-line');
+        m.append('circle').attr('class','mark-dot').attr('r',3);
+        m.append('text').attr('class','mark-label').attr('dy','-6').style('font-size','11px');
+        return m;
+      });
+      gSel.attr('transform', d=>`translate(${x(d.time)},0)`);
+      gSel.select('line.mark-line').attr('x1',0).attr('x2',0).attr('y1',0).attr('y2',H).attr('stroke','var(--marker)').attr('stroke-opacity',0.9).attr('stroke-dasharray','3,3');
+      gSel.select('circle.mark-dot').attr('cx',0).attr('cy',0).attr('fill','var(--marker)').attr('fill-opacity',0.9);
+      gSel.select('text.mark-label').attr('x',4).attr('y',20).attr('fill','var(--marker)').style('font-weight','600').text(d=>d.label && d.label.trim()? d.label : d.time);
+    }
+  }
+
+  // ---------- Tables & controls ----------
+  const spBody = d3.select('#spTable tbody');
+  const mkBody = d3.select('#mkTable tbody');
+  const tracksBody = d3.select('#tracksTable tbody');
+
+  function renderTrackSelector(){
+    const sel=d3.select('#activeTrack');
+    const prev = sel.property('value');
+    const opts=[{label:'Total (view all)',value:'TOTAL'}].concat(state.tracks.map((t,i)=>({label:t.name,value:String(i)})));
+    sel.selectAll('option').data(opts,d=>d.value).join('option').attr('value',d=>d.value).text(d=>d.label);
+    // preserve selection if still valid
+    const valid = new Set(opts.map(o=>o.value));
+    sel.property('value', valid.has(prev) ? prev : 'TOTAL');
+    sel.on('change',()=>{ renderTables(); update(true); sync(); });
+  }
+
+  function renderTables(){
+    const active=getActiveTrack();
+    const spSec=document.getElementById('spSection');
+    if(active===null){ if(spSec) spSec.style.display='none'; } else { if(spSec) spSec.style.display=''; }
+
+    tracksBody.html('');
+    state.tracks.forEach((t,i)=>{
+      const tr=tracksBody.append('tr');
+      tr.append('td').append('input').attr('type','text').property('value',t.name).on('input',e=>{t.name=e.target.value; renderTrackSelector(); save(); update(true);});
+      tr.append('td').append('input').attr('type','color').property('value',t.color).on('input',e=>{t.color=e.target.value; save(); update(true);});
+      tr.append('td').append('input').attr('type','checkbox').property('checked',t.visible).on('change',e=>{t.visible=e.target.checked; save(); update(true);});
+      tr.append('td').append('button').attr('class','btn').text('Delete').on('click',()=>{
+        if(state.tracks.length===1){ alert('At least one track is required.'); return; }
+        const idx=getActiveIndex(); state.tracks.splice(i,1); save(); renderTrackSelector(); renderTables(); update(true); if(idx===i){ d3.select('#activeTrack').property('value','TOTAL').dispatch('change'); }
+      });
+    });
+
+    spBody.html('');
+    const active2=getActiveTrack();
+    if(active2!==null){
+      (active2.storyPoints||[]).forEach((sp,i)=>{
+        const tr=spBody.append('tr');
+        tr.append('td').append('input').attr('type','text').property('value',sp.name).on('input',e=>{sp.name=e.target.value; save(); update(true);});
+        tr.append('td').append('input').attr('type','number').attr('step','0.1').property('value',sp.time).on('input',e=>{sp.time=+e.target.value; save(); update(true);});
+        const tdW=tr.append('td');
+        const r=tdW.append('input').attr('type','range').attr('min','-2').attr('max','2').attr('step','0.01').property('value',sp.weight);
+        const n=tdW.append('input').attr('type','number').attr('min','-2').attr('max','2').attr('step','0.01').style('margin-left','6px').style('width','90px').property('value',sp.weight);
+        r.on('input',e=>{sp.weight=+e.target.value; n.property('value',sp.weight); save(); update(true);});
+        n.on('input',e=>{sp.weight=+e.target.value; r.property('value',sp.weight); save(); update(true);});
+        tr.append('td').append('button').attr('class','btn').text('Delete').on('click',()=>{ active2.storyPoints.splice(i,1); save(); renderTables(); update(true); });
+      });
+    }
+
+    renderMarkers();
+  }
+
+  function renderMarkers(){
+    mkBody.html('');
+    state.markers.forEach((m,i)=>{
+      const tr=mkBody.append('tr');
+      tr.append('td').append('input').attr('type','number').attr('step','0.1').property('value',m.time).on('input',e=>{m.time=+e.target.value; save(); update(true);});
+      tr.append('td').append('input').attr('type','text').property('value',m.label||'').on('input',e=>{m.label=e.target.value; save(); update(true);});
+      tr.append('td').append('button').attr('class','btn').text('Delete').on('click',()=>{ state.markers.splice(i,1); save(); renderTables(); update(true); });
+    });
+  }
+
+  // ---------- Controls ----------
+  d3.select('#exportJSON').on('click',()=>{ const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='pacing_state_v3.json'; a.click(); });
+  d3.select('#importJSON').on('change',(ev)=>{ const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ state=upgrade(JSON.parse(r.result)); save(); renderTrackSelector(); renderTables(); update(true); programmaticReset(); }catch(e){ alert('Invalid JSON'); } }; r.readAsText(f); });
+  d3.select('#resetAll').on('click',()=>{ localStorage.removeItem('pacing_state_v3'); location.reload(); });
+
+  d3.select('#addTrack').on('click',()=>{ const base='Track'; let i=1; while(state.tracks.find(t=>t.name===`${base} ${i}`)) i++; const color=`#${Math.floor(Math.random()*0xffffff).toString(16).padStart(6,'0')}`; state.tracks.push({name:`${base} ${i}`,color:color,visible:true,storyPoints:[], mult:1, decay:0}); save(); renderTrackSelector(); renderTables(); update(true); });
+
+  d3.select('#addSP').on('click',()=>{ const t=getActiveTrack(); if(!t){alert('Select a specific track (not Total) to add points.'); return;} const last=(t.storyPoints||[]).slice(-1)[0]||{time:0}; (t.storyPoints||[]).push({name:'New Point',time:(last.time||0)+1,weight:0}); save(); renderTables(); update(true); const s=document.getElementById('spScroll'); if(s){ s.scrollTop=s.scrollHeight; }});
+
+  // Decay controls (GLOBAL in Total; PER-TRACK in Track tabs)
+  d3.select('#decay').on('input',e=>{
+    const t = getActiveTrack();
+    if (!t) { state.decay = +e.target.value; }
+    else { t.decay = +e.target.value; }
+    save(); update(true); sync();
+  });
+  d3.select('#decayVal').on('input',e=>{
+    const t = getActiveTrack();
+    if (!t) { state.decay = +e.target.value; }
+    else { t.decay = +e.target.value; }
+    save(); update(true); sync();
+  });
+
+  // Track Multiplier controls
+  d3.select('#mult').on('input', e=>{ const t = getActiveTrack(); if(!t) return; t.mult = +e.target.value; save(); update(true); sync(); });
+  d3.select('#multVal').on('input', e=>{ const t = getActiveTrack(); if(!t) return; t.mult = +e.target.value; save(); update(true); sync(); });
+
+  // Timeline Scale (view only)
+  d3.select('#timeScale').on('input', e=>{ const k = +e.target.value; d3.select('#timeScaleVal').property('value',k.toFixed(2)); programmaticScaleTo(k); });
+  d3.select('#timeScaleVal').on('input', e=>{ let k = +e.target.value || 1; k = Math.max(0.5, Math.min(12, k)); programmaticScaleTo(k); });
+
+  // Envelope controls — keep min<=max automatically
+  function clampEnv(){
+    if(state.envelope.min>state.envelope.max){ state.envelope.max = state.envelope.min; }
+    if(state.envelope.max<state.envelope.min){ state.envelope.min = state.envelope.max; }
+  }
+  d3.select('#envMin').on('input',e=>{ state.envelope.min=+e.target.value; clampEnv(); save(); update(true); sync(); });
+  d3.select('#envMax').on('input',e=>{ state.envelope.max=+e.target.value; clampEnv(); save(); update(true); sync(); });
+  d3.select('#envMinVal').on('input',e=>{ state.envelope.min=+e.target.value; clampEnv(); save(); update(true); sync(); });
+  d3.select('#envMaxVal').on('input',e=>{ state.envelope.max=+e.target.value; clampEnv(); save(); update(true); sync(); });
+
+  // Trend/solo toggles
+  d3.select('#soloToggle').on('change',(e)=>{ state.settings.solo=!!e.target.checked; save(); update(true); });
+  d3.select('#highlightTrend').on('change', e=>{ state.settings.highlightTrend = !!e.target.checked; save(); update(true); });
+  d3.select('#showTrend').on('change', e=>{ state.settings.showTrend = !!e.target.checked; save(); update(true); });
+
+  // Track-tab include-global toggle
+  d3.select('#includeGlobalInTrack').on('change', e => {
+    state.view.trackIncludeGlobal = !!e.target.checked;
+    save(); update(true); sync();
+  });
+
+  // markers
+  d3.select('#addMarker').on('click',()=>{ state.markers.push({time:0,label:''}); save(); renderTables(); update(true); });
+  d3.select('#svg').on('click',(ev)=>{
+    const pt=d3.pointer(ev, svg.node());
+    if(pt[0] < 48 || pt[0] > 48+W || pt[1] < 16 || pt[1] > 16+H) return;
+    const plotX = clamp(pt[0]-48, 0, W);
+    const tx = x.invert(plotX);
+    state.markers.push({time:Math.round(tx*10)/10,label:''}); save(); renderTables(); update(true);
+  });
+  d3.select('#svg').on('mouseleave', ()=>{ hoverG.selectAll('*').remove(); hideTooltip(); });
+
+  // Zoom buttons (optional if you add them to UI)
+  d3.select('#zoomIn').on('click', ()=> programmaticScaleBy(1.25));
+  d3.select('#zoomOut').on('click', ()=> programmaticScaleBy(1/1.25));
+  d3.select('#zoomReset').on('click', ()=>{ programmaticReset(); d3.select('#timeScale').property('value',1); d3.select('#timeScaleVal').property('value',1); });
+
+  function sync(){
+    // Decay label & values
+    const t = getActiveTrack();
+    const label = document.getElementById('decayLabelText');
+    if (label) label.textContent = t ? 'Track Decay' : 'Global Decay';
+    const val = t ? (t.decay||0) : state.decay;
+    d3.select('#decay').property('value', val);
+    d3.select('#decayVal').property('value', val);
+
+    // Envelope controls reflect state
+    d3.select('#envMin').property('value',state.envelope.min);
+    d3.select('#envMax').property('value',state.envelope.max);
+    d3.select('#envMinVal').property('value',state.envelope.min);
+    d3.select('#envMaxVal').property('value',state.envelope.max);
+
+    // Multiplier enable/disable by tab
+    const multEl = document.getElementById('mult');
+    const multValEl = document.getElementById('multVal');
+    if (t){ if(multEl) multEl.disabled = false; if(multValEl) multValEl.disabled = false; d3.select('#mult').property('value', t.mult ?? 1); d3.select('#multVal').property('value', t.mult ?? 1); }
+    else { if(multEl) multEl.disabled = true; if(multValEl) multValEl.disabled = true; d3.select('#mult').property('value', 1); d3.select('#multVal').property('value', 1); }
+
+    // Solo toggle: keep visible; disable in Total; do not change value
+    const soloEl = document.getElementById('soloToggle');
+    const soloLabel = soloEl ? soloEl.closest('label') : null;
+    if (!t) {
+      if (soloEl) { soloEl.disabled = true; }
+      if (soloLabel) { soloLabel.style.opacity = '0.5'; soloLabel.style.pointerEvents = 'none'; }
+    } else {
+      if (soloEl) { soloEl.disabled = false; soloEl.checked = !!state.settings.solo; }
+      if (soloLabel) { soloLabel.style.opacity = ''; soloLabel.style.pointerEvents = ''; }
+    }
+
+    // Track-tab include-global toggle visibility/checked
+    const includeGlobWrap = document.getElementById('includeGlobalWrap');
+    const includeGlobBox  = document.getElementById('includeGlobalInTrack');
+    if (includeGlobWrap && includeGlobBox) {
+      if (!t) {
+        includeGlobWrap.style.opacity = '0.5';
+        includeGlobWrap.style.pointerEvents = 'none';
+        includeGlobBox.disabled = true;
+      } else {
+        includeGlobWrap.style.opacity = '';
+        includeGlobWrap.style.pointerEvents = '';
+        includeGlobBox.disabled = false;
+        includeGlobBox.checked = !!state.view.trackIncludeGlobal;
+      }
+    }
+
+    const k = Math.max(0.5, Math.min(20, transform.k));
+    d3.select('#timeScale').property('value', k);
+    d3.select('#timeScaleVal').property('value', k.toFixed(2));
+  }
+
+  // init
+  renderTrackSelector(); renderTables(); sync(); update(true);
+
+  // tiny tests (kept from v3.6.2, still useful)
+  (function(){
+    const msgs=[]; const ok=(m,c)=>msgs.push((c?'✅ ':'❌ ')+m);
+    ok('dropdown has TOTAL', Array.from(document.getElementById('activeTrack').options).some(o=>o.value==='TOTAL'));
+    const n0=state.tracks.length; state.tracks.push({name:'T',color:'#fff',visible:true,storyPoints:[], mult:1, decay:0}); save(); ok('track add removable', (state.tracks.pop(), save(), state.tracks.length===n0));
+    ok('envelope sliders wired', typeof document.getElementById('envMin').oninput==='function' && typeof document.getElementById('envMax').oninput==='function');
+    ok('Y rules fixed', state.view.yIncludeEnv===true && state.view.yAlwaysZero===true && Math.abs(state.view.yBottomPad-0.10)<1e-9);
+
+    // Existing: multiplier disabled in Total
+    document.getElementById('activeTrack').value='TOTAL'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+    const multDisabled = document.getElementById('mult').disabled && document.getElementById('multVal').disabled; ok('multiplier disabled in Total', multDisabled);
+
+    // Solo disabled in Total, enabled on track
+    const soloEl = document.getElementById('soloToggle');
+    ok('solo disabled in Total', soloEl && soloEl.disabled === true);
+    document.getElementById('activeTrack').value='0'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+    ok('solo enabled on track', soloEl && soloEl.disabled === false);
+
+    // Trend exists in Total view
+    document.getElementById('activeTrack').value='TOTAL'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+    update(true);
+    const hasTrendTotal = !!document.querySelector('path.trend-line');
+    ok('trend visible in Total', hasTrendTotal);
+
+    // Trend exists in Track view (uses ALL tracks regardless of visibility)
+    document.getElementById('activeTrack').value='0'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+    update(true);
+    const hasTrendTrack = !!document.querySelector('path.trend-line');
+    ok('trend visible in Track tab (all tracks aggregated)', hasTrendTrack);
+
+    // Solo persists across tabs
+    const soloBox = document.getElementById('soloToggle');
+    if (soloBox) {
+      document.getElementById('activeTrack').value='0'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+      soloBox.checked = true; soloBox.dispatchEvent(new Event('change'));
+      document.getElementById('activeTrack').value='TOTAL'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+      document.getElementById('activeTrack').value='1'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+      ok('solo persists across tabs', document.getElementById('soloToggle').checked === true);
+    }
+
+    // Highlight trend fades lines in Track view
+    const highlight = document.getElementById('highlightTrend');
+    if (highlight) {
+      highlight.checked = true; highlight.dispatchEvent(new Event('change'));
+      update(true);
+      const anyFaded = Array.from(document.querySelectorAll('path.track')).some(p=> +p.getAttribute('opacity') <= 0.31);
+      ok('highlight trend fades lines in Track view', anyFaded);
+      highlight.checked = false; highlight.dispatchEvent(new Event('change'));
+    }
+
+    // showTrend hides trend line when off (Track view)
+    const showTrend = document.getElementById('showTrend');
+    if (showTrend) {
+      showTrend.checked = false; showTrend.dispatchEvent(new Event('change'));
+      update(true);
+      const hasTrendOff = !!document.querySelector('path.trend-line');
+      ok('showTrend off hides trend', hasTrendOff === false);
+      showTrend.checked = true; showTrend.dispatchEvent(new Event('change'));
+      update(true);
+    }
+
+    // Combined rule validation tests
+    // 1) In Total view, changing a track's decay changes the paths even with same global (combined = global+track)
+    document.getElementById('activeTrack').value='TOTAL'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+    document.getElementById('decayVal').value = 0.01; document.getElementById('decayVal').dispatchEvent(new Event('input'));
+    update(true);
+    const firstPathBefore = document.querySelector('g.tracks path.track')?.getAttribute('d')||'';
+    if (state.tracks[0]) { state.tracks[0].decay = 0.02; save(); }
+    update(true);
+    const firstPathAfter = document.querySelector('g.tracks path.track')?.getAttribute('d')||'';
+    ok('Total uses combined decay (track.decay affects Total)', firstPathBefore !== firstPathAfter);
+
+    // 1b) In Total view, if track.decay = 0, increasing global still changes the path (additive)
+    if (state.tracks[0]) { state.tracks[0].decay = 0; save(); }
+    update(true);
+    const pathBeforeGlobal = document.querySelector('g.tracks path.track')?.getAttribute('d')||'';
+    state.decay = (state.decay||0) + 0.005; save(); update(true);
+    const pathAfterGlobal = document.querySelector('g.tracks path.track')?.getAttribute('d')||'';
+    ok('Total additive: global alone moves the path when track.decay=0', pathBeforeGlobal !== pathAfterGlobal);
+
+    // 2) In Track tab: with includeGlobal OFF, line ignores global (uses per-track); trend uses combined (changes with global)
+    state.view.trackIncludeGlobal = false; save();
+    document.getElementById('activeTrack').value='0'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+    update(true);
+    const lineBefore = document.querySelector('g.tracks path.track')?.getAttribute('d')||'';
+    const trendBefore = document.querySelector('g.trend path.trend-line')?.getAttribute('d')||'';
+    state.decay = (state.decay||0) + 0.005; save(); update(true);
+    const lineAfter = document.querySelector('g.tracks path.track')?.getAttribute('d')||'';
+    const trendAfter = document.querySelector('g.trend path.trend-line')?.getAttribute('d')||'';
+    ok('Track lines use per-track only (unchanged by global)', lineBefore === lineAfter);
+    ok('Track trend uses combined (changes with global)', trendBefore !== trendAfter);
+
+    // 3) Track-tab toggle test: OFF -> ON should change path (include global)
+    const incBox = document.getElementById('includeGlobalInTrack');
+    if (incBox) {
+      state.decay = 0.02; if (state.tracks[0]) state.tracks[0].decay = 0; save(); update(true);
+      const pathOff = document.querySelector('g.tracks path.track')?.getAttribute('d') || '';
+      incBox.checked = true; incBox.dispatchEvent(new Event('change')); update(true);
+      const pathOn = document.querySelector('g.tracks path.track')?.getAttribute('d') || '';
+      ok('Track tab toggle: OFF->ON changes path (includes global)', pathOff !== pathOn);
+      incBox.checked = false; incBox.dispatchEvent(new Event('change'));
+    }
+
+    document.getElementById('testbox').textContent=msgs.join('  |  ');
+  })();
+
+})();
+</script>
+</body>
+</html>
