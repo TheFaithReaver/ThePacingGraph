@@ -9,7 +9,7 @@
     :root{
       --bg:#0d0f1a; --panel:#141829; --panel-2:#1a2140; --ink:#e8ecf3; --muted:#9aa4bd;
       --accent:#6d5ef3; --accent-2:#24c8db; --danger:#ff5470; --ok:#2dd4bf;
-      --grid:#253053; --stroke:#2e3866; --chip:#212849; --chip-2:#1b203e; --marker:#ffa500;
+      --grid:#253053; --stroke:#2e3866; --chip:#364178; --chip-2:#1b203e; --marker:#ffa500;
     }
     html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,Segoe UI,Roboto,Arial,sans-serif}
     .wrap{display:grid;grid-template-rows:auto 1fr auto;min-height:100%}
@@ -89,12 +89,12 @@
         </div>
 
         <h3>Controls</h3>
-        <div style="padding:10px 12px;display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center">
+        <div style="padding:5px 12px;display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center">
           <label><span id="decayLabelText" class="muted-strong">Global Decay</span> <input type="range" id="decay" min="-0.05" max="0.05" step="0.001" value="0"></label>
           <input type="number" id="decayVal" value="0" step="0.001">
         </div>
 
-        <div style="padding:10px 12px;display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center">
+        <div style="padding:5px 12px;display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center">
           <label>Track Multiplier <input type="range" id="mult" min="0" max="2" step="0.01" value="1"></label>
           <input type="number" id="multVal" value="1" step="0.01">
         </div>
@@ -624,7 +624,6 @@
     }
   ],
   "settings": {
-    "solo": false
   },
   "meta": {
     "title": "Mass Effect 2 — Suicide Mission (pacing)"
@@ -1190,9 +1189,6 @@
     }
   ],
   "settings": {
-    "solo": true,
-    "showTrend": true,
-    "timeScale": 1
   },
   "meta": {
     "title": "Witcher 3 — Family Matters (sheet import)"
@@ -1668,7 +1664,6 @@
     }
   ],
   "settings": {
-    "solo": false
   },
   "meta": {
     "title": "Baldur’s Gate 3 — House of Hope (pacing)"
