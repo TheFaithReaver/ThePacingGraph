@@ -23,6 +23,13 @@
     .card{background:var(--panel-2);border:1px solid var(--stroke);border-radius:12px;overflow:hidden}
     .card h3{margin:0;padding:10px 12px;border-bottom:1px solid var(--stroke);font-size:13px;letter-spacing:.3px;background:var(--panel)}
     .chart{height:600px}
+	/* Sticky-center graph */
+.chart.graph--sticky-center{
+  position: sticky;
+  /* stay vertically centered: 50% viewport height - half of graph height */
+  top: calc(35vh - var(--graphHalf, 250px));
+  z-index: 2; /* keep above gridlines if needed */
+}
     svg{width:100%;height:100%;display:block}
     .grid line{stroke:var(--grid);stroke-width:1;shape-rendering:crispEdges}
     .axis path,.axis line{stroke:var(--stroke)}
@@ -73,7 +80,8 @@
         <div id="testbox"></div>
       </section>
 
-      <section class="card">
+      <section class="card" id="params">
+	  
         <h3>Timeline</h3>
         <div style="padding:10px 12px;display:grid;grid-template-columns:1fr 70px;gap:8px;align-items:center">
           <label>Timeline Scale (view only) <input type="range" id="timeScale" min="0.5" max="12" step="0.01" value="1"></label>
@@ -1878,6 +1886,34 @@ function deleteCurrentProject(){
   alert('Project "'+name+'" deleted.');
 }
 
+// Choose your default project here (must match a key in localStorage projects)
+const DEFAULT_PROJECT_ID = 'seed_bg3_hoh'; // or 'seed_me2', 'seed_w3_fm'
+
+// If you prefer matching by name instead of id:
+function findProjectIdByName(name){
+  const entries = Object.entries(getProjects());
+  const hit = entries.find(([id, p]) => (p.name||'').toLowerCase() === name.toLowerCase());
+  return hit ? hit[0] : null;
+}
+
+// Load default only if nothing loaded yet and no session state
+function maybeLoadDefaultProject(){
+  const projects = getProjects();
+  const currentId = localStorage.getItem(CURRENT_PROJECT_KEY) || '';
+  const hasSession = !!localStorage.getItem('pacing_state_v3');
+
+  // URL override: ?project=<id> (optional)
+  const q = new URLSearchParams(location.search);
+  const pid = q.get('project');
+  if (pid && projects[pid]) { loadProjectById(pid); return; }
+
+  if (!currentId && !hasSession){
+    const id = projects[DEFAULT_PROJECT_ID] ? DEFAULT_PROJECT_ID : Object.keys(projects)[0];
+    if (id) loadProjectById(id);
+  }
+}
+
+
 // Wire UI
 document.addEventListener('DOMContentLoaded', ()=>{
   // 1) Seed default projects into localStorage (no-op if already present)
@@ -1912,6 +1948,69 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   const delBtn = document.getElementById('deleteProject');
   if (delBtn) delBtn.addEventListener('click', deleteCurrentProject);
+
+  // --- AUTO-FOLLOW: keep the graph in view while the user scrolls the params column ---
+  {
+    // graph container (the section that holds the SVG)
+    const graphEl = document.getElementById('svg')?.closest('.chart');
+    // params column = the whole right panel we just gave id="params"
+    const paramsCol = document.getElementById('params');
+
+    if (graphEl && paramsCol) {
+      // Only react when the scroll input came from the params column
+      let lastParamScroll = 0;
+      const stamp = () => { lastParamScroll = performance.now(); };
+      paramsCol.addEventListener('wheel',     stamp, {passive:true});
+      paramsCol.addEventListener('touchmove', stamp, {passive:true});
+      paramsCol.addEventListener('keydown',   stamp); // PgDn/Arrows
+
+      // Pause auto-centering briefly if user interacts with the chart itself
+      let pauseUntil = 0;
+      const pause = () => { pauseUntil = performance.now() + 800; };
+      graphEl.addEventListener('mousedown',  pause, {passive:true});
+      graphEl.addEventListener('touchstart', pause, {passive:true});
+
+      // If the graph falls mostly out of view while scrolling params, re-center it
+      const obs = new IntersectionObserver((entries)=>{
+        const e = entries[0];
+        const now = performance.now();
+        if (now < pauseUntil) return;                 // just interacted with chart
+        if (now - lastParamScroll > 600) return;      // not from params recently
+        if (!e.isIntersecting || e.intersectionRatio < 0.60) {
+          graphEl.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+        }
+      }, { threshold: [0, 0.6, 1], root: null, rootMargin: '-80px 0px -80px 0px' });
+
+      obs.observe(graphEl);
+    }
+  }
+  // Sticky-center the graph without scrolling the page
+{
+  const chartEl = document.getElementById('svg')?.closest('.chart');
+  if (chartEl) {
+    chartEl.classList.add('graph--sticky-center');
+
+    const setHalf = () => {
+      const h = chartEl.getBoundingClientRect().height || 500;
+      chartEl.style.setProperty('--graphHalf', (h / 2) + 'px');
+    };
+
+    // set once on load
+    setHalf();
+
+    // keep it accurate on resize and after rerenders
+    window.addEventListener('resize', setHalf, { passive: true });
+
+    // if your code already has a central update() call, hook after it:
+    const _update = update;
+    update = function(){
+      _update.apply(this, arguments);
+      setHalf();
+    };
+  }
+}
+
+  // --- /AUTO-FOLLOW ---
 });
 
 
