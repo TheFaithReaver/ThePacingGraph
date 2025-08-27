@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,7 +22,7 @@
     main{display:grid;grid-template-columns:1.25fr .95fr;gap:12px;padding:12px}
     .card{background:var(--panel-2);border:1px solid var(--stroke);border-radius:12px;overflow:hidden}
     .card h3{margin:0;padding:10px 12px;border-bottom:1px solid var(--stroke);font-size:13px;letter-spacing:.3px;background:var(--panel)}
-    .chart{height:500px}
+    .chart{height:600px}
     svg{width:100%;height:100%;display:block}
     .grid line{stroke:var(--grid);stroke-width:1;shape-rendering:crispEdges}
     .axis path,.axis line{stroke:var(--stroke)}
@@ -48,6 +49,12 @@
       <div class="bar">
         <button class="btn" id="exportJSON">Export JSON</button>
         <label class="btn">Import JSON <input type="file" id="importJSON" accept="application/json" hidden></label>
+		<select class="btn" id="projectsMenu" title="Projects">
+		  <option value="__NEW__">New Project</option>
+		</select>
+		<button class="btn" id="saveProject"  title="Create or update the selected project">Create project</button>
+		<button class="btn" id="renameProject" title="Rename currently selected project">Rename</button>
+		<button class="btn" id="deleteProject" title="Delete currently selected project">Delete</button>
         <button class="btn" id="zoomReset">Reset View</button>
         <button class="btn danger" id="resetAll">Reset</button>
       </div>
@@ -157,10 +164,1762 @@
     </footer>
   </div>
 
+<script type="application/json" id="seed-me2">
+{
+  "decay": 0,
+  "envelope": {
+    "min": 0,
+    "max": 1
+  },
+  "tracks": [
+    {
+      "name": "Narrative",
+      "color": "#7aa0ff",
+      "visible": true,
+      "storyPoints": [
+        {
+          "name": "Briefing & Relay jump",
+          "time": 0,
+          "weight": 0.7
+        },
+        {
+          "name": "Omega-4 Relay cutscene (approach)",
+          "time": 3,
+          "weight": 0.8
+        },
+        {
+          "name": "Arrival in Collector space",
+          "time": 6,
+          "weight": 0.6
+        },
+        {
+          "name": "Combat: Collector boarding party",
+          "time": 10,
+          "weight": 0.5
+        },
+        {
+          "name": "Assign tech specialist (vents)",
+          "time": 15,
+          "weight": 0.85
+        },
+        {
+          "name": "Vent infiltration combat section",
+          "time": 18,
+          "weight": 0.5
+        },
+        {
+          "name": "Assign fireteam leader",
+          "time": 25,
+          "weight": 0.7
+        },
+        {
+          "name": "Combat: Large Collector arena",
+          "time": 30,
+          "weight": 0.4
+        },
+        {
+          "name": "Rescue crew decision",
+          "time": 38,
+          "weight": 0.95
+        },
+        {
+          "name": "Combat: Seeker Swarm tunnels",
+          "time": 42,
+          "weight": 0.5
+        },
+        {
+          "name": "Assign biotic shield carrier",
+          "time": 50,
+          "weight": 0.8
+        },
+        {
+          "name": "Combat under biotic shield",
+          "time": 55,
+          "weight": 0.5
+        },
+        {
+          "name": "Squad split / second fireteam",
+          "time": 60,
+          "weight": 0.7
+        },
+        {
+          "name": "Final approach combat gauntlet",
+          "time": 65,
+          "weight": 0.4
+        },
+        {
+          "name": "Pre-final boss cutscene",
+          "time": 75,
+          "weight": 0.9
+        },
+        {
+          "name": "Final boss fight (Human-Reaper)",
+          "time": 78,
+          "weight": 0.55
+        },
+        {
+          "name": "Extraction timer / escape",
+          "time": 88,
+          "weight": 0.75
+        },
+        {
+          "name": "Normandy escape cinematic",
+          "time": 95,
+          "weight": 0.9
+        },
+        {
+          "name": "Survival/death reveal",
+          "time": 98,
+          "weight": 1.0
+        },
+        {
+          "name": "Epilogue / consequences montage",
+          "time": 100,
+          "weight": 0.85
+        }
+      ]
+    },
+    {
+      "name": "Combat",
+      "color": "#ff4d5a",
+      "visible": true,
+      "storyPoints": [
+        {
+          "name": "Briefing & Relay jump",
+          "time": 0,
+          "weight": 0.0
+        },
+        {
+          "name": "Omega-4 Relay cutscene (approach)",
+          "time": 3,
+          "weight": 0.0
+        },
+        {
+          "name": "Arrival in Collector space",
+          "time": 6,
+          "weight": 0.0
+        },
+        {
+          "name": "Combat: Collector boarding party",
+          "time": 10,
+          "weight": 0.7
+        },
+        {
+          "name": "Assign tech specialist (vents)",
+          "time": 15,
+          "weight": 0.0
+        },
+        {
+          "name": "Vent infiltration combat section",
+          "time": 18,
+          "weight": 0.8
+        },
+        {
+          "name": "Assign fireteam leader",
+          "time": 25,
+          "weight": 0.0
+        },
+        {
+          "name": "Combat: Large Collector arena",
+          "time": 30,
+          "weight": 0.85
+        },
+        {
+          "name": "Rescue crew decision",
+          "time": 38,
+          "weight": 0.0
+        },
+        {
+          "name": "Combat: Seeker Swarm tunnels",
+          "time": 42,
+          "weight": 0.75
+        },
+        {
+          "name": "Assign biotic shield carrier",
+          "time": 50,
+          "weight": 0.0
+        },
+        {
+          "name": "Combat under biotic shield",
+          "time": 55,
+          "weight": 0.8
+        },
+        {
+          "name": "Squad split / second fireteam",
+          "time": 60,
+          "weight": 0.0
+        },
+        {
+          "name": "Final approach combat gauntlet",
+          "time": 65,
+          "weight": 0.9
+        },
+        {
+          "name": "Pre-final boss cutscene",
+          "time": 75,
+          "weight": 0.0
+        },
+        {
+          "name": "Final boss fight (Human-Reaper)",
+          "time": 78,
+          "weight": 1.0
+        },
+        {
+          "name": "Extraction timer / escape",
+          "time": 88,
+          "weight": 0.85
+        },
+        {
+          "name": "Normandy escape cinematic",
+          "time": 95,
+          "weight": 0.0
+        },
+        {
+          "name": "Survival/death reveal",
+          "time": 98,
+          "weight": 0.0
+        },
+        {
+          "name": "Epilogue / consequences montage",
+          "time": 100,
+          "weight": 0.0
+        }
+      ]
+    },
+    {
+      "name": "Player Agency",
+      "color": "#2dd4bf",
+      "visible": true,
+      "storyPoints": [
+        {
+          "name": "Briefing & Relay jump",
+          "time": 0,
+          "weight": 0.3
+        },
+        {
+          "name": "Omega-4 Relay cutscene (approach)",
+          "time": 3,
+          "weight": 0.2
+        },
+        {
+          "name": "Arrival in Collector space",
+          "time": 6,
+          "weight": 0.3
+        },
+        {
+          "name": "Combat: Collector boarding party",
+          "time": 10,
+          "weight": 0.4
+        },
+        {
+          "name": "Assign tech specialist (vents)",
+          "time": 15,
+          "weight": 0.9
+        },
+        {
+          "name": "Vent infiltration combat section",
+          "time": 18,
+          "weight": 0.5
+        },
+        {
+          "name": "Assign fireteam leader",
+          "time": 25,
+          "weight": 0.8
+        },
+        {
+          "name": "Combat: Large Collector arena",
+          "time": 30,
+          "weight": 0.4
+        },
+        {
+          "name": "Rescue crew decision",
+          "time": 38,
+          "weight": 0.95
+        },
+        {
+          "name": "Combat: Seeker Swarm tunnels",
+          "time": 42,
+          "weight": 0.4
+        },
+        {
+          "name": "Assign biotic shield carrier",
+          "time": 50,
+          "weight": 0.85
+        },
+        {
+          "name": "Combat under biotic shield",
+          "time": 55,
+          "weight": 0.5
+        },
+        {
+          "name": "Squad split / second fireteam",
+          "time": 60,
+          "weight": 0.85
+        },
+        {
+          "name": "Final approach combat gauntlet",
+          "time": 65,
+          "weight": 0.4
+        },
+        {
+          "name": "Pre-final boss cutscene",
+          "time": 75,
+          "weight": 0.2
+        },
+        {
+          "name": "Final boss fight (Human-Reaper)",
+          "time": 78,
+          "weight": 0.4
+        },
+        {
+          "name": "Extraction timer / escape",
+          "time": 88,
+          "weight": 0.5
+        },
+        {
+          "name": "Normandy escape cinematic",
+          "time": 95,
+          "weight": 0.2
+        },
+        {
+          "name": "Survival/death reveal",
+          "time": 98,
+          "weight": 0.95
+        },
+        {
+          "name": "Epilogue / consequences montage",
+          "time": 100,
+          "weight": 0.7
+        }
+      ]
+    },
+    {
+      "name": "Aesthetics",
+      "color": "#c299d1",
+      "visible": true,
+      "storyPoints": [
+        {
+          "name": "Briefing & Relay jump",
+          "time": 0,
+          "weight": 0.6
+        },
+        {
+          "name": "Omega-4 Relay cutscene (approach)",
+          "time": 3,
+          "weight": 0.9
+        },
+        {
+          "name": "Arrival in Collector space",
+          "time": 6,
+          "weight": 0.7
+        },
+        {
+          "name": "Combat: Collector boarding party",
+          "time": 10,
+          "weight": 0.6
+        },
+        {
+          "name": "Assign tech specialist (vents)",
+          "time": 15,
+          "weight": 0.5
+        },
+        {
+          "name": "Vent infiltration combat section",
+          "time": 18,
+          "weight": 0.6
+        },
+        {
+          "name": "Assign fireteam leader",
+          "time": 25,
+          "weight": 0.5
+        },
+        {
+          "name": "Combat: Large Collector arena",
+          "time": 30,
+          "weight": 0.6
+        },
+        {
+          "name": "Rescue crew decision",
+          "time": 38,
+          "weight": 0.5
+        },
+        {
+          "name": "Combat: Seeker Swarm tunnels",
+          "time": 42,
+          "weight": 0.6
+        },
+        {
+          "name": "Assign biotic shield carrier",
+          "time": 50,
+          "weight": 0.5
+        },
+        {
+          "name": "Combat under biotic shield",
+          "time": 55,
+          "weight": 0.7
+        },
+        {
+          "name": "Squad split / second fireteam",
+          "time": 60,
+          "weight": 0.5
+        },
+        {
+          "name": "Final approach combat gauntlet",
+          "time": 65,
+          "weight": 0.7
+        },
+        {
+          "name": "Pre-final boss cutscene",
+          "time": 75,
+          "weight": 0.95
+        },
+        {
+          "name": "Final boss fight (Human-Reaper)",
+          "time": 78,
+          "weight": 1.0
+        },
+        {
+          "name": "Extraction timer / escape",
+          "time": 88,
+          "weight": 0.9
+        },
+        {
+          "name": "Normandy escape cinematic",
+          "time": 95,
+          "weight": 0.95
+        },
+        {
+          "name": "Survival/death reveal",
+          "time": 98,
+          "weight": 0.8
+        },
+        {
+          "name": "Epilogue / consequences montage",
+          "time": 100,
+          "weight": 0.7
+        }
+      ]
+    }
+  ],
+  "markers": [
+    {
+      "time": 15,
+      "label": "Assign Tech Specialist"
+    },
+    {
+      "time": 38,
+      "label": "Rescue Crew Decision"
+    },
+    {
+      "time": 50,
+      "label": "Assign Biotic Shield Carrier"
+    },
+    {
+      "time": 78,
+      "label": "Final Boss: Human-Reaper"
+    },
+    {
+      "time": 98,
+      "label": "Survival/Death Reveal"
+    }
+  ],
+  "settings": {
+    "solo": false
+  },
+  "meta": {
+    "title": "Mass Effect 2 — Suicide Mission (pacing)"
+  }
+}
+</script>
+
+<script type="application/json" id="seed-w3">
+{
+  "decay": 0,
+  "envelope": {
+    "min": -0.01,
+    "max": 1
+  },
+  "tracks": [
+    {
+      "name": "Narrative",
+      "color": "#7aa0ff",
+      "visible": true,
+      "storyPoints": [
+        {
+          "name": "Meeting the Baron",
+          "time": 0,
+          "weight": 0.3
+        },
+        {
+          "name": "Ciri flashback - Wolf Fight",
+          "time": 5,
+          "weight": 0.9
+        },
+        {
+          "name": "Use your Witcher Senses to search the room.",
+          "time": 24,
+          "weight": 0.3
+        },
+        {
+          "name": "The pellar's hut",
+          "time": 33,
+          "weight": 0.4
+        },
+        {
+          "name": "Lead the goat to the pellar.",
+          "time": 38,
+          "weight": 0.3
+        },
+        {
+          "name": "Peller retual",
+          "time": 43,
+          "weight": 0.7
+        },
+        {
+          "name": "Talk to the baron - fire in the Village",
+          "time": 48,
+          "weight": 0.5
+        },
+        {
+          "name": "Save the stable hand and the horses trapped in the burning stable.",
+          "time": 49,
+          "weight": 0.3
+        },
+        {
+          "name": "Defeat the baron in a fistfight",
+          "time": 50,
+          "weight": 0.6
+        },
+        {
+          "name": "Talk after fight",
+          "time": 52,
+          "weight": 0.7
+        },
+        {
+          "name": "Follow the baron to show you where he buried his child.",
+          "time": 60,
+          "weight": 0.9
+        },
+        {
+          "name": "Protect the baron from the wraiths.",
+          "time": 63,
+          "weight": 0.2
+        },
+        {
+          "name": "Use the Axii Sign to calm the botchling.",
+          "time": 64,
+          "weight": 0.3
+        },
+        {
+          "name": "Protect the baron from the wraiths.",
+          "time": 65,
+          "weight": 0.2
+        },
+        {
+          "name": "Use the Axii Sign to calm the botchling.",
+          "time": 65.27,
+          "weight": 0.3
+        },
+        {
+          "name": "Summon the lubberkin where the botchling is buried.",
+          "time": 68,
+          "weight": 0.5
+        },
+        {
+          "name": "Follow the lubberkin",
+          "time": 70,
+          "weight": 0.3
+        },
+        {
+          "name": "Search the area around the smokehouse using your Witcher Senses.",
+          "time": 71,
+          "weight": 0.2
+        },
+        {
+          "name": "Follow the lubberkin.",
+          "time": 72,
+          "weight": 0.1
+        },
+        {
+          "name": "Examine the dead horses.",
+          "time": 73,
+          "weight": 0.3
+        },
+        {
+          "name": "Follow the lubberkin.",
+          "time": 74,
+          "weight": 0.3
+        },
+        {
+          "name": "Look around the fisherman's hut",
+          "time": 77,
+          "weight": 0.6
+        },
+        {
+          "name": "Talk to the baron about his family.",
+          "time": 80,
+          "weight": 0.7
+        },
+        {
+          "name": "Ciri Flashback - Talking",
+          "time": 83,
+          "weight": 0.8
+        },
+        {
+          "name": "Ciri Flashback - Horse Riding",
+          "time": 85,
+          "weight": 0.3
+        }
+      ]
+    },
+    {
+      "name": "Combat",
+      "color": "#ff4d5a",
+      "visible": true,
+      "storyPoints": [
+        {
+          "name": "Meeting the Baron",
+          "time": 0,
+          "weight": 0
+        },
+        {
+          "name": "Ciri flashback - Wolf Fight",
+          "time": 5,
+          "weight": 0.6
+        },
+        {
+          "name": "Use your Witcher Senses to search the room.",
+          "time": 24,
+          "weight": 0
+        },
+        {
+          "name": "The pellar's hut",
+          "time": 33,
+          "weight": 0
+        },
+        {
+          "name": "Lead the goat to the pellar.",
+          "time": 38,
+          "weight": 0.3
+        },
+        {
+          "name": "Peller retual",
+          "time": 43,
+          "weight": 0
+        },
+        {
+          "name": "Talk to the baron - fire in the Village",
+          "time": 48,
+          "weight": 0
+        },
+        {
+          "name": "Save the stable hand and the horses trapped in the burning stable.",
+          "time": 49,
+          "weight": 0
+        },
+        {
+          "name": "Defeat the baron in a fistfight",
+          "time": 50,
+          "weight": 0.4
+        },
+        {
+          "name": "Talk after fight",
+          "time": 52,
+          "weight": 0
+        },
+        {
+          "name": "Follow the baron to show you where he buried his child.",
+          "time": 60,
+          "weight": 0
+        },
+        {
+          "name": "Protect the baron from the wraiths.",
+          "time": 63,
+          "weight": 0.6
+        },
+        {
+          "name": "Protect the baron from the wraiths.",
+          "time": 65,
+          "weight": 0.7
+        },
+        {
+          "name": "Summon the lubberkin where the botchling is buried.",
+          "time": 68,
+          "weight": 0
+        },
+        {
+          "name": "Follow the lubberkin",
+          "time": 70,
+          "weight": 0
+        },
+        {
+          "name": "Search the area around the smokehouse using your Witcher Senses.",
+          "time": 71,
+          "weight": 0
+        },
+        {
+          "name": "Follow the lubberkin.",
+          "time": 72,
+          "weight": 0
+        },
+        {
+          "name": "Examine the dead horses.",
+          "time": 73,
+          "weight": 0.6
+        },
+        {
+          "name": "Follow the lubberkin.",
+          "time": 74,
+          "weight": 0.5
+        },
+        {
+          "name": "Look around the fisherman's hut",
+          "time": 77,
+          "weight": 0
+        },
+        {
+          "name": "Talk to the baron about his family.",
+          "time": 80,
+          "weight": 0
+        },
+        {
+          "name": "Ciri Flashback - Talking",
+          "time": 83,
+          "weight": 0
+        },
+        {
+          "name": "Ciri Flashback - Horse Riding",
+          "time": 85,
+          "weight": 0
+        }
+      ]
+    },
+    {
+      "name": "Player Agency",
+      "color": "#2dd4bf",
+      "visible": true,
+      "storyPoints": [
+        {
+          "name": "Meeting the Baron",
+          "time": 0,
+          "weight": 0
+        },
+        {
+          "name": "Ciri flashback - Wolf Fight",
+          "time": 5,
+          "weight": 0.5
+        },
+        {
+          "name": "Use your Witcher Senses to search the room.",
+          "time": 24,
+          "weight": 0.5
+        },
+        {
+          "name": "The pellar's hut",
+          "time": 33,
+          "weight": 0.3
+        },
+        {
+          "name": "Lead the goat to the pellar.",
+          "time": 38,
+          "weight": 0.7
+        },
+        {
+          "name": "Peller retual",
+          "time": 43,
+          "weight": 0
+        },
+        {
+          "name": "Talk to the baron - fire in the Village",
+          "time": 48,
+          "weight": 0
+        },
+        {
+          "name": "Save the stable hand and the horses trapped in the burning stable.",
+          "time": 49,
+          "weight": 0.5
+        },
+        {
+          "name": "Defeat the baron in a fistfight",
+          "time": 50,
+          "weight": 0.3
+        },
+        {
+          "name": "Talk after fight",
+          "time": 52,
+          "weight": 0.3
+        },
+        {
+          "name": "Follow the baron to show you where he buried his child.",
+          "time": 60,
+          "weight": 0
+        },
+        {
+          "name": "Protect the baron from the wraiths.",
+          "time": 63,
+          "weight": 0.5
+        },
+        {
+          "name": "Use the Axii Sign to calm the botchling.",
+          "time": 64,
+          "weight": 0.6
+        },
+        {
+          "name": "Protect the baron from the wraiths.",
+          "time": 65,
+          "weight": 0.5
+        },
+        {
+          "name": "Use the Axii Sign to calm the botchling.",
+          "time": 65.3,
+          "weight": 0.6
+        },
+        {
+          "name": "Summon the lubberkin where the botchling is buried.",
+          "time": 68,
+          "weight": 0.3
+        },
+        {
+          "name": "Follow the lubberkin",
+          "time": 70,
+          "weight": 0.5
+        },
+        {
+          "name": "Search the area around the smokehouse using your Witcher Senses.",
+          "time": 71,
+          "weight": 0.3
+        },
+        {
+          "name": "Follow the lubberkin.",
+          "time": 72,
+          "weight": 0.2
+        },
+        {
+          "name": "Examine the dead horses.",
+          "time": 73,
+          "weight": 0.7
+        },
+        {
+          "name": "Follow the lubberkin.",
+          "time": 74,
+          "weight": 0.4
+        },
+        {
+          "name": "Look around the fisherman's hut",
+          "time": 77,
+          "weight": 0.3
+        },
+        {
+          "name": "Talk to the baron about his family.",
+          "time": 80,
+          "weight": 0.1
+        },
+        {
+          "name": "Ciri Flashback - Talking",
+          "time": 83,
+          "weight": 0.5
+        },
+        {
+          "name": "Ciri Flashback - Horse Riding",
+          "time": 85,
+          "weight": 0.7
+        }
+      ]
+    },
+    {
+      "name": "Aesthetics",
+      "color": "#c299d1",
+      "visible": true,
+      "storyPoints": [
+        {
+          "name": "Meeting the Baron",
+          "time": 0,
+          "weight": 0.2
+        },
+        {
+          "name": "Ciri flashback - Wolf Fight",
+          "time": 5,
+          "weight": 0.5
+        },
+        {
+          "name": "Use your Witcher Senses to search the room.",
+          "time": 24,
+          "weight": 0.2
+        },
+        {
+          "name": "The pellar's hut",
+          "time": 33,
+          "weight": 0.1
+        },
+        {
+          "name": "Lead the goat to the pellar.",
+          "time": 38,
+          "weight": 0.1
+        },
+        {
+          "name": "Peller retual",
+          "time": 43,
+          "weight": 0.5
+        },
+        {
+          "name": "Talk to the baron - fire in the Village",
+          "time": 48,
+          "weight": 0.7
+        },
+        {
+          "name": "Save the stable hand and the horses trapped in the burning stable.",
+          "time": 49,
+          "weight": 0.9
+        },
+        {
+          "name": "Defeat the baron in a fistfight",
+          "time": 50,
+          "weight": 0.8
+        },
+        {
+          "name": "Talk after fight",
+          "time": 52,
+          "weight": 0.3
+        },
+        {
+          "name": "Follow the baron to show you where he buried his child.",
+          "time": 60,
+          "weight": 0.6
+        },
+        {
+          "name": "Protect the baron from the wraiths.",
+          "time": 63,
+          "weight": 0.3
+        },
+        {
+          "name": "Use the Axii Sign to calm the botchling.",
+          "time": 64,
+          "weight": 0.3
+        },
+        {
+          "name": "Protect the baron from the wraiths.",
+          "time": 65,
+          "weight": 0.4
+        },
+        {
+          "name": "Use the Axii Sign to calm the botchling.",
+          "time": 65.4,
+          "weight": 0.5
+        },
+        {
+          "name": "Summon the lubberkin where the botchling is buried.",
+          "time": 67.92,
+          "weight": 0.08
+        },
+        {
+          "name": "Follow the lubberkin",
+          "time": 70,
+          "weight": 0.5
+        },
+        {
+          "name": "Search the area around the smokehouse using your Witcher Senses.",
+          "time": 71,
+          "weight": 0.1
+        },
+        {
+          "name": "Follow the lubberkin.",
+          "time": 72,
+          "weight": 0.2
+        },
+        {
+          "name": "Examine the dead horses.",
+          "time": 73,
+          "weight": 0.3
+        },
+        {
+          "name": "Follow the lubberkin.",
+          "time": 74,
+          "weight": 0.2
+        },
+        {
+          "name": "Look around the fisherman's hut",
+          "time": 77,
+          "weight": 0.4
+        },
+        {
+          "name": "Talk to the baron about his family.",
+          "time": 80,
+          "weight": 0.5
+        },
+        {
+          "name": "Ciri Flashback - Talking",
+          "time": 83,
+          "weight": 0.3
+        },
+        {
+          "name": "Ciri Flashback - Horse Riding",
+          "time": 85,
+          "weight": 0.6
+        }
+      ]
+    }
+  ],
+  "markers": [
+    {
+      "time": 5,
+      "label": "Ciri flashback - Wolf Fight"
+    },
+    {
+      "time": 63,
+      "label": "Protecting Baron fromw Wraiths"
+    },
+    {
+      "time": 68,
+      "label": "Summon Lubberkin"
+    },
+    {
+      "time": 77,
+      "label": "Fisherman's hut"
+    },
+    {
+      "time": 48.9,
+      "label": "Stables Burning"
+    },
+    {
+      "time": 83,
+      "label": "Ciri Flashback - Horse Riding"
+    },
+    {
+      "time": 37.9,
+      "label": "Getting Goat to pellar"
+    }
+  ],
+  "settings": {
+    "solo": true,
+    "showTrend": true,
+    "timeScale": 1
+  },
+  "meta": {
+    "title": "Witcher 3 — Family Matters (sheet import)"
+  }
+}
+</script>
+
+<script type="application/json" id="seed-bg3">
+{
+  "decay": 0,
+  "envelope": {
+    "min": 0,
+    "max": 1
+  },
+  "tracks": [
+    {
+      "name": "Narrative",
+      "color": "#7aa0ff",
+      "visible": true,
+      "storyPoints": [
+        {
+          "name": "Enter House of Hope (Helsik ritual)",
+          "time": 0,
+          "weight": 0.6
+        },
+        {
+          "name": "Initial exploration of foyer & halls",
+          "time": 5,
+          "weight": 0.5
+        },
+        {
+          "name": "Meet Hope in captivity",
+          "time": 10,
+          "weight": 0.85
+        },
+        {
+          "name": "Discuss Raphael's contract / promise rescue",
+          "time": 14,
+          "weight": 0.9
+        },
+        {
+          "name": "Optional: Haarlep encounter (temptation/choice)",
+          "time": 18,
+          "weight": 0.7
+        },
+        {
+          "name": "House party with infernal guests (social stealth)",
+          "time": 22,
+          "weight": 0.6
+        },
+        {
+          "name": "Steal clues/passcodes in archives (traps/puzzles)",
+          "time": 28,
+          "weight": 0.6
+        },
+        {
+          "name": "Break or alter infernal contracts",
+          "time": 35,
+          "weight": 0.95
+        },
+        {
+          "name": "Approach to vault corridor (wards & traps)",
+          "time": 40,
+          "weight": 0.6
+        },
+        {
+          "name": "Acquire the Orphic Hammer",
+          "time": 45,
+          "weight": 0.85
+        },
+        {
+          "name": "Alarm triggers / house hostility escalates",
+          "time": 50,
+          "weight": 0.6
+        },
+        {
+          "name": "Confrontation with Raphael (pre-fight reveal)",
+          "time": 55,
+          "weight": 0.95
+        },
+        {
+          "name": "Boss fight: Raphael – Phase 1",
+          "time": 58,
+          "weight": 0.6
+        },
+        {
+          "name": "Boss fight: Raphael – Phase 2 (adds/hellfire)",
+          "time": 62,
+          "weight": 0.65
+        },
+        {
+          "name": "Boss fight resolution",
+          "time": 68,
+          "weight": 0.8
+        },
+        {
+          "name": "Free Hope from captivity",
+          "time": 72,
+          "weight": 0.95
+        },
+        {
+          "name": "Escape sequence through collapsing house",
+          "time": 75,
+          "weight": 0.7
+        },
+        {
+          "name": "Portal escape cinematic",
+          "time": 82,
+          "weight": 0.8
+        },
+        {
+          "name": "Epilogue: consequences & party reactions",
+          "time": 86,
+          "weight": 0.85
+        },
+        {
+          "name": "Aftermath back at camp",
+          "time": 90,
+          "weight": 0.8
+        }
+      ]
+    },
+    {
+      "name": "Combat",
+      "color": "#ff4d5a",
+      "visible": true,
+      "storyPoints": [
+        {
+          "name": "Enter House of Hope (Helsik ritual)",
+          "time": 0,
+          "weight": 0.0
+        },
+        {
+          "name": "Initial exploration of foyer & halls",
+          "time": 5,
+          "weight": 0.0
+        },
+        {
+          "name": "Meet Hope in captivity",
+          "time": 10,
+          "weight": 0.0
+        },
+        {
+          "name": "Discuss Raphael's contract / promise rescue",
+          "time": 14,
+          "weight": 0.0
+        },
+        {
+          "name": "Optional: Haarlep encounter (temptation/choice)",
+          "time": 18,
+          "weight": 0.2
+        },
+        {
+          "name": "House party with infernal guests (social stealth)",
+          "time": 22,
+          "weight": 0.0
+        },
+        {
+          "name": "Steal clues/passcodes in archives (traps/puzzles)",
+          "time": 28,
+          "weight": 0.3
+        },
+        {
+          "name": "Break or alter infernal contracts",
+          "time": 35,
+          "weight": 0.0
+        },
+        {
+          "name": "Approach to vault corridor (wards & traps)",
+          "time": 40,
+          "weight": 0.4
+        },
+        {
+          "name": "Acquire the Orphic Hammer",
+          "time": 45,
+          "weight": 0.2
+        },
+        {
+          "name": "Alarm triggers / house hostility escalates",
+          "time": 50,
+          "weight": 0.6
+        },
+        {
+          "name": "Confrontation with Raphael (pre-fight reveal)",
+          "time": 55,
+          "weight": 0.0
+        },
+        {
+          "name": "Boss fight: Raphael – Phase 1",
+          "time": 58,
+          "weight": 0.85
+        },
+        {
+          "name": "Boss fight: Raphael – Phase 2 (adds/hellfire)",
+          "time": 62,
+          "weight": 0.95
+        },
+        {
+          "name": "Boss fight resolution",
+          "time": 68,
+          "weight": 0.6
+        },
+        {
+          "name": "Free Hope from captivity",
+          "time": 72,
+          "weight": 0.0
+        },
+        {
+          "name": "Escape sequence through collapsing house",
+          "time": 75,
+          "weight": 0.6
+        },
+        {
+          "name": "Portal escape cinematic",
+          "time": 82,
+          "weight": 0.0
+        },
+        {
+          "name": "Epilogue: consequences & party reactions",
+          "time": 86,
+          "weight": 0.0
+        },
+        {
+          "name": "Aftermath back at camp",
+          "time": 90,
+          "weight": 0.0
+        }
+      ]
+    },
+    {
+      "name": "Player Agency",
+      "color": "#2dd4bf",
+      "visible": true,
+      "storyPoints": [
+        {
+          "name": "Enter House of Hope (Helsik ritual)",
+          "time": 0,
+          "weight": 0.4
+        },
+        {
+          "name": "Initial exploration of foyer & halls",
+          "time": 5,
+          "weight": 0.5
+        },
+        {
+          "name": "Meet Hope in captivity",
+          "time": 10,
+          "weight": 0.6
+        },
+        {
+          "name": "Discuss Raphael's contract / promise rescue",
+          "time": 14,
+          "weight": 0.7
+        },
+        {
+          "name": "Optional: Haarlep encounter (temptation/choice)",
+          "time": 18,
+          "weight": 0.8
+        },
+        {
+          "name": "House party with infernal guests (social stealth)",
+          "time": 22,
+          "weight": 0.65
+        },
+        {
+          "name": "Steal clues/passcodes in archives (traps/puzzles)",
+          "time": 28,
+          "weight": 0.75
+        },
+        {
+          "name": "Break or alter infernal contracts",
+          "time": 35,
+          "weight": 0.9
+        },
+        {
+          "name": "Approach to vault corridor (wards & traps)",
+          "time": 40,
+          "weight": 0.6
+        },
+        {
+          "name": "Acquire the Orphic Hammer",
+          "time": 45,
+          "weight": 0.6
+        },
+        {
+          "name": "Alarm triggers / house hostility escalates",
+          "time": 50,
+          "weight": 0.5
+        },
+        {
+          "name": "Confrontation with Raphael (pre-fight reveal)",
+          "time": 55,
+          "weight": 0.5
+        },
+        {
+          "name": "Boss fight: Raphael – Phase 1",
+          "time": 58,
+          "weight": 0.45
+        },
+        {
+          "name": "Boss fight: Raphael – Phase 2 (adds/hellfire)",
+          "time": 62,
+          "weight": 0.45
+        },
+        {
+          "name": "Boss fight resolution",
+          "time": 68,
+          "weight": 0.5
+        },
+        {
+          "name": "Free Hope from captivity",
+          "time": 72,
+          "weight": 0.7
+        },
+        {
+          "name": "Escape sequence through collapsing house",
+          "time": 75,
+          "weight": 0.5
+        },
+        {
+          "name": "Portal escape cinematic",
+          "time": 82,
+          "weight": 0.3
+        },
+        {
+          "name": "Epilogue: consequences & party reactions",
+          "time": 86,
+          "weight": 0.6
+        },
+        {
+          "name": "Aftermath back at camp",
+          "time": 90,
+          "weight": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Aesthetics",
+      "color": "#c299d1",
+      "visible": true,
+      "storyPoints": [
+        {
+          "name": "Enter House of Hope (Helsik ritual)",
+          "time": 0,
+          "weight": 0.85
+        },
+        {
+          "name": "Initial exploration of foyer & halls",
+          "time": 5,
+          "weight": 0.7
+        },
+        {
+          "name": "Meet Hope in captivity",
+          "time": 10,
+          "weight": 0.6
+        },
+        {
+          "name": "Discuss Raphael's contract / promise rescue",
+          "time": 14,
+          "weight": 0.6
+        },
+        {
+          "name": "Optional: Haarlep encounter (temptation/choice)",
+          "time": 18,
+          "weight": 0.6
+        },
+        {
+          "name": "House party with infernal guests (social stealth)",
+          "time": 22,
+          "weight": 0.75
+        },
+        {
+          "name": "Steal clues/passcodes in archives (traps/puzzles)",
+          "time": 28,
+          "weight": 0.65
+        },
+        {
+          "name": "Break or alter infernal contracts",
+          "time": 35,
+          "weight": 0.6
+        },
+        {
+          "name": "Approach to vault corridor (wards & traps)",
+          "time": 40,
+          "weight": 0.8
+        },
+        {
+          "name": "Acquire the Orphic Hammer",
+          "time": 45,
+          "weight": 0.9
+        },
+        {
+          "name": "Alarm triggers / house hostility escalates",
+          "time": 50,
+          "weight": 0.75
+        },
+        {
+          "name": "Confrontation with Raphael (pre-fight reveal)",
+          "time": 55,
+          "weight": 0.9
+        },
+        {
+          "name": "Boss fight: Raphael – Phase 1",
+          "time": 58,
+          "weight": 0.9
+        },
+        {
+          "name": "Boss fight: Raphael – Phase 2 (adds/hellfire)",
+          "time": 62,
+          "weight": 1.0
+        },
+        {
+          "name": "Boss fight resolution",
+          "time": 68,
+          "weight": 0.85
+        },
+        {
+          "name": "Free Hope from captivity",
+          "time": 72,
+          "weight": 0.7
+        },
+        {
+          "name": "Escape sequence through collapsing house",
+          "time": 75,
+          "weight": 0.9
+        },
+        {
+          "name": "Portal escape cinematic",
+          "time": 82,
+          "weight": 0.95
+        },
+        {
+          "name": "Epilogue: consequences & party reactions",
+          "time": 86,
+          "weight": 0.7
+        },
+        {
+          "name": "Aftermath back at camp",
+          "time": 90,
+          "weight": 0.6
+        }
+      ]
+    }
+  ],
+  "markers": [
+    {
+      "time": 10,
+      "label": "Meet Hope"
+    },
+    {
+      "time": 35,
+      "label": "Break/Alter Contract"
+    },
+    {
+      "time": 45,
+      "label": "Acquire Orphic Hammer"
+    },
+    {
+      "time": 58,
+      "label": "Raphael Boss – Phase 1"
+    },
+    {
+      "time": 62,
+      "label": "Raphael Boss – Phase 2"
+    },
+    {
+      "time": 72,
+      "label": "Free Hope"
+    },
+    {
+      "time": 82,
+      "label": "Portal Escape"
+    }
+  ],
+  "settings": {
+    "solo": false
+  },
+  "meta": {
+    "title": "Baldur’s Gate 3 — House of Hope (pacing)"
+  }
+}
+</script>
+
+
 <script>
 (function(){
   // ---------- constants ----------
-  const FIXED_BOTTOM_PAD = 0.10; // keep at least -0.10 under zero
+  const FIXED_BOTTOM_PAD = 0.15; // keep at least -0.10 under zero
+  
+// ---------- Projects (New / Create / Update / Rename / Delete) ----------
+const APP_VERSION = 'v3.6.3';
+const PROJECTS_KEY = 'pacing_projects_v1';
+const CURRENT_PROJECT_KEY = 'pacing_current_project_id';
+const NEW_VALUE = '__NEW__';
+
+function getProjects(){
+  try { return JSON.parse(localStorage.getItem(PROJECTS_KEY) || '{}'); } catch(e){ return {}; }
+}
+function setProjects(obj){
+  localStorage.setItem(PROJECTS_KEY, JSON.stringify(obj));
+}
+function makeId(){ return 'p'+Math.random().toString(36).slice(2)+Date.now().toString(36); }
+
+// ---- Default projects seeding ----
+const RESEED_ON_EVERY_LOAD = false; // set true if you want to overwrite/restore seeds each load
+
+function readSeedJSON(id){
+  const el = document.getElementById(id);
+  if(!el) return null;
+  try { return JSON.parse(el.textContent); }
+  catch(e){ console.warn('Invalid JSON in', id, e); return null; }
+}
+
+const SEEDED_PROJECTS = [
+  { id: 'seed_me2',   name: 'Mass Effect 2 — Suicide Mission', data: readSeedJSON('seed-me2') },
+  { id: 'seed_w3_fm', name: 'The Witcher 3 — Family Matters',  data: readSeedJSON('seed-w3') },
+  { id: 'seed_bg3_hoh', name: 'Baldur’s Gate 3 — House of Hope', data: readSeedJSON('seed-bg3') },
+].filter(p => !!p.data);
+
+function installDefaultProjectsIfMissing(){
+  const projects = getProjects();
+  let changed = false;
+
+  SEEDED_PROJECTS.forEach(s => {
+    if (RESEED_ON_EVERY_LOAD || !projects[s.id]) {
+      projects[s.id] = {
+        name: s.name,
+        version: APP_VERSION,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        // store exactly what you’d import; loader will run upgrade() later
+        data: s.data
+      };
+      changed = true;
+    }
+  });
+
+  if (changed) setProjects(projects);
+}
+
+
+function suggestProjectName(){
+  const base = 'Project';
+  const projects = getProjects();
+  let n = Object.keys(projects).length + 1;
+  let name = base + ' ' + n;
+  const names = new Set(Object.values(projects).map(p=> (p.name||'').toLowerCase()));
+  while(names.has(name.toLowerCase())){ n++; name = base + ' ' + n; }
+  return name;
+}
+
+function snapshotState(){
+  // Deep copy of current state sufficient to reconstruct the graph
+  const snap = JSON.parse(JSON.stringify(state));
+  // Zoom/timeline scale is intentionally NOT stored (view-only)
+  return snap;
+}
+
+function setSaveButtonLabel(){
+  const saveBtn = document.getElementById('saveProject');
+  const sel = document.getElementById('projectsMenu');
+  if(!saveBtn || !sel) return;
+
+  const projects = getProjects();
+  const currentId = localStorage.getItem(CURRENT_PROJECT_KEY) || '';
+  const isNewSelected = sel.value === NEW_VALUE;
+  const hasCurrent = currentId && projects[currentId];
+
+  // If “New Project” is selected (or no valid current project) -> Create
+  // Otherwise -> Update
+  saveBtn.textContent = (isNewSelected || !hasCurrent) ? 'Create project' : 'Update project';
+}
+
+function populateProjectsMenu(){
+  const sel = document.getElementById('projectsMenu');
+  if(!sel) return;
+
+  const projects = getProjects();
+  const currentId = localStorage.getItem(CURRENT_PROJECT_KEY) || '';
+
+  sel.innerHTML = ''; // reset
+  // Always add “New Project” as the first option
+  const newOpt = document.createElement('option');
+  newOpt.value = NEW_VALUE;
+  newOpt.textContent = 'New Project';
+  sel.appendChild(newOpt);
+
+  // Add saved projects (most recently updated first)
+  Object.entries(projects)
+    .sort((a,b)=> (projects[b[0]].updatedAt||0) - (projects[a[0]].updatedAt||0))
+    .forEach(([id,meta])=>{
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = meta.name || 'Untitled';
+      sel.appendChild(opt);
+    });
+
+  // Select current if exists, otherwise “New Project”
+  if(currentId && projects[currentId]) sel.value = currentId;
+  else sel.value = NEW_VALUE;
+
+  setSaveButtonLabel();
+}
+
+function createNewProjectFlow(){
+  let name = prompt('Project name:', suggestProjectName());
+  if(name===null) { // user cancelled; keep selection as New Project
+    setSaveButtonLabel();
+    return;
+  }
+  name = name.trim() || 'Untitled';
+
+  const projects = getProjects();
+  const id = makeId();
+  projects[id] = {
+    name, version: APP_VERSION,
+    createdAt: Date.now(), updatedAt: Date.now(),
+    data: snapshotState()
+  };
+  setProjects(projects);
+  localStorage.setItem(CURRENT_PROJECT_KEY, id);
+  populateProjectsMenu(); // will auto-select the new project
+  alert('Project "'+name+'" created.');
+}
+
+function saveProjectFlow(){
+  const sel = document.getElementById('projectsMenu');
+  const projects = getProjects();
+  const currentId = localStorage.getItem(CURRENT_PROJECT_KEY) || '';
+  const hasCurrent = currentId && projects[currentId];
+
+  // If “New Project” is selected OR we don't have a valid current, create a new one
+  if(sel.value === NEW_VALUE || !hasCurrent){
+    createNewProjectFlow();
+    return;
+  }
+
+  // Otherwise update current project
+  projects[currentId].data = snapshotState();
+  projects[currentId].updatedAt = Date.now();
+  setProjects(projects);
+  populateProjectsMenu();
+  alert('Project "' + (projects[currentId].name||'Untitled') + '" updated.');
+}
+
+function loadProjectById(id){
+  const projects = getProjects();
+  const p = projects[id];
+  if(!p){ alert('Project not found'); return; }
+  // 'upgrade', 'save', 'renderTrackSelector', 'renderTables', 'update', 'sync' must already exist in your code
+  state = upgrade(JSON.parse(JSON.stringify(p.data)));
+  save(); // persist into pacing_state_v3 as current working session
+  localStorage.setItem(CURRENT_PROJECT_KEY, id);
+  renderTrackSelector(); renderTables(); update(true); sync();
+  // If your code doesn't have programmaticReset(), remove the next line
+  programmaticReset();
+  populateProjectsMenu();
+}
+
+function renameCurrentProject(){
+  const projects = getProjects();
+  const currentId = localStorage.getItem(CURRENT_PROJECT_KEY);
+  if(!currentId || !projects[currentId]){ alert('Load a project first, then rename it.'); return; }
+  const curName = projects[currentId].name || 'Untitled';
+  let name = prompt('New project name:', curName);
+  if(name===null) return;
+  name = name.trim();
+  if(!name){ alert('Name can\'t be empty.'); return; }
+  projects[currentId].name = name;
+  projects[currentId].updatedAt = Date.now();
+  setProjects(projects);
+  populateProjectsMenu();
+}
+
+function deleteCurrentProject(){
+  const projects = getProjects();
+  const currentId = localStorage.getItem(CURRENT_PROJECT_KEY);
+  if(!currentId || !projects[currentId]){ alert('Load a project first, then delete it.'); return; }
+  const name = projects[currentId].name || 'Untitled';
+  const ok = confirm('Delete project "'+name+'"? This cannot be undone.');
+  if(!ok) return;
+
+  delete projects[currentId];
+  setProjects(projects);
+  // Clear current selection -> back to “New Project”
+  localStorage.removeItem(CURRENT_PROJECT_KEY);
+  populateProjectsMenu();
+  alert('Project "'+name+'" deleted.');
+}
+
+// Wire UI
+document.addEventListener('DOMContentLoaded', ()=>{
+  // 1) Seed default projects into localStorage (no-op if already present)
+  //    Make sure the helpers readSeedJSON/SEEDED_PROJECTS/installDefaultProjectsIfMissing are defined above this block.
+  installDefaultProjectsIfMissing();
+
+  // 2) Build the dropdown from storage and set the Save/Update label
+  populateProjectsMenu();
+  if (typeof setSaveButtonLabel === 'function') setSaveButtonLabel();
+
+  // 3) Existing wiring for the dropdown behaviour
+  const sel = document.getElementById('projectsMenu');
+  if (sel){
+    sel.addEventListener('change', (e)=>{
+      const id = e.target.value;
+      if (id === NEW_VALUE){
+        // Selecting “New Project” creates a new project immediately
+        createNewProjectFlow();
+      } else if (id){
+        loadProjectById(id);
+      }
+      setSaveButtonLabel();
+    });
+  }
+
+  // (Optional but recommended) wire the other buttons if not already:
+  const saveBtn = document.getElementById('saveProject');
+  if (saveBtn) saveBtn.addEventListener('click', saveProjectFlow);
+
+  const renBtn = document.getElementById('renameProject');
+  if (renBtn) renBtn.addEventListener('click', renameCurrentProject);
+
+  const delBtn = document.getElementById('deleteProject');
+  if (delBtn) delBtn.addEventListener('click', deleteCurrentProject);
+});
+
+
 
   // ---------- State upgrade ----------
   function upgrade(s){
@@ -375,9 +2134,10 @@ function renderHoverDotsForTrack(track, mode){
     yMin = Math.min(yMin, state.envelope.min, 0);
     yMax = Math.max(yMax, state.envelope.max, 0);
     const ty=(yMax-yMin)||1;
-    let bottom = yMin - ty*0.10; // 10% visual breathing room
-    let top    = yMax + ty*0.10;
-    bottom = Math.min(bottom, 0 - FIXED_BOTTOM_PAD); // at least -0.10 under zero
+	const PAD = 0.15; // was 0.10
+    let bottom = yMin - ty*PAD; // 10% visual breathing room
+    let top    = yMax + ty*PAD;
+    bottom = Math.min(bottom, - FIXED_BOTTOM_PAD); // at least -0.10 under zero
     y.domain([bottom, top]).nice();
 
     // Axes + grids
@@ -703,8 +2463,10 @@ trackLayers2.select('path.track-hit')
 
   // init
   renderTrackSelector(); renderTables(); sync(); update(true);
+	populateProjectsMenu();
 
-  // tiny tests (kept from v3.6.2, still useful)
+
+  /* // tiny tests (kept from v3.6.2, still useful)
   (function(){
     const msgs=[]; const ok=(m,c)=>msgs.push((c?'✅ ':'❌ ')+m);
     ok('dropdown has TOTAL', Array.from(document.getElementById('activeTrack').options).some(o=>o.value==='TOTAL'));
@@ -808,7 +2570,7 @@ trackLayers2.select('path.track-hit')
     }
 
     document.getElementById('testbox').textContent=msgs.join('  |  ');
-  })();
+  })();*/
 
 })();
 </script>
