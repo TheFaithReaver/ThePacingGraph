@@ -48,8 +48,6 @@
       <div class="bar">
         <button class="btn" id="exportJSON">Export JSON</button>
         <label class="btn">Import JSON <input type="file" id="importJSON" accept="application/json" hidden></label>
-        <button class="btn" id="addTrack">+ Track</button>
-        <select class="btn" id="activeTrack"></select>
         <button class="btn" id="zoomReset">Reset View</button>
         <button class="btn danger" id="resetAll">Reset</button>
       </div>
@@ -95,6 +93,9 @@
         </div>
 
         <h3>Tracks</h3>
+		<div style="padding:10px 12px;display:flex;gap:8px;align-items:center">
+		<select class="btn" id="activeTrack"></select>
+        </div>		
         <div style="padding:10px 12px">
           <label class="pill" title="Hide other visible tracks while editing a specific track">
             <input type="checkbox" id="soloToggle" style="margin-right:6px"> Solo active track (hide others)
@@ -122,7 +123,10 @@
           </table>
           <small class="muted">Select <b>Total (view all)</b> to view all tracks together. Editing is disabled in Total.</small>
         </div>
-
+        <div style="padding:10px 12px;display:flex;gap:8px;align-items:center">
+            <button class="btn" id="addTrack">+ Track</button>
+        </div>		
+		
         <div id="spSection">
           <h3>Story Points</h3>
           <div style="padding:10px 12px;display:flex;gap:8px;align-items:center">
@@ -427,7 +431,7 @@ trackLayers.select('path.track-hit')
 
 
       if (state.settings.showTrend) {
-        const grid = computeOverlayGrid(false, 'combined'); // visible only, combined (global + per‑track)
+        const grid = computeOverlayGrid(false, 'combined'); // visible only, combined (global + per‑track) 
         if(grid.xs.length && grid.series.length){
           const mean = grid.xs.map((_,k)=> grid.series.reduce((s,arr)=>s+(arr[k]||0),0)/grid.series.length);
           const meanLine = d3.line().x((d,i)=>x(grid.xs[i])).y(d=>y(d)).curve(d3.curveCatmullRom.alpha(.6));
@@ -699,6 +703,112 @@ trackLayers2.select('path.track-hit')
 
   // init
   renderTrackSelector(); renderTables(); sync(); update(true);
+
+  // tiny tests (kept from v3.6.2, still useful)
+  (function(){
+    const msgs=[]; const ok=(m,c)=>msgs.push((c?'✅ ':'❌ ')+m);
+    ok('dropdown has TOTAL', Array.from(document.getElementById('activeTrack').options).some(o=>o.value==='TOTAL'));
+    const n0=state.tracks.length; state.tracks.push({name:'T',color:'#fff',visible:true,storyPoints:[], mult:1, decay:0}); save(); ok('track add removable', (state.tracks.pop(), save(), state.tracks.length===n0));
+    ok('envelope sliders wired', typeof document.getElementById('envMin').oninput==='function' && typeof document.getElementById('envMax').oninput==='function');
+    ok('Y rules fixed', state.view.yIncludeEnv===true && state.view.yAlwaysZero===true && Math.abs(state.view.yBottomPad-0.10)<1e-9);
+
+    // Existing: multiplier disabled in Total
+    document.getElementById('activeTrack').value='TOTAL'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+    const multDisabled = document.getElementById('mult').disabled && document.getElementById('multVal').disabled; ok('multiplier disabled in Total', multDisabled);
+
+    // Solo disabled in Total, enabled on track
+    const soloEl = document.getElementById('soloToggle');
+    ok('solo disabled in Total', soloEl && soloEl.disabled === true);
+    document.getElementById('activeTrack').value='0'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+    ok('solo enabled on track', soloEl && soloEl.disabled === false);
+
+    // Trend exists in Total view
+    document.getElementById('activeTrack').value='TOTAL'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+    update(true);
+    const hasTrendTotal = !!document.querySelector('path.trend-line');
+    ok('trend visible in Total', hasTrendTotal);
+
+    // Trend exists in Track view (uses ALL tracks regardless of visibility)
+    document.getElementById('activeTrack').value='0'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+    update(true);
+    const hasTrendTrack = !!document.querySelector('path.trend-line');
+    ok('trend visible in Track tab (all tracks aggregated)', hasTrendTrack);
+
+    // Solo persists across tabs
+    const soloBox = document.getElementById('soloToggle');
+    if (soloBox) {
+      document.getElementById('activeTrack').value='0'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+      soloBox.checked = true; soloBox.dispatchEvent(new Event('change'));
+      document.getElementById('activeTrack').value='TOTAL'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+      document.getElementById('activeTrack').value='1'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+      ok('solo persists across tabs', document.getElementById('soloToggle').checked === true);
+    }
+
+    // Highlight trend fades lines in Track view
+    const highlight = document.getElementById('highlightTrend');
+    if (highlight) {
+      highlight.checked = true; highlight.dispatchEvent(new Event('change'));
+      update(true);
+      const anyFaded = Array.from(document.querySelectorAll('path.track')).some(p=> +p.getAttribute('opacity') <= 0.31);
+      ok('highlight trend fades lines in Track view', anyFaded);
+      highlight.checked = false; highlight.dispatchEvent(new Event('change'));
+    }
+
+    // showTrend hides trend line when off (Track view)
+    const showTrend = document.getElementById('showTrend');
+    if (showTrend) {
+      showTrend.checked = false; showTrend.dispatchEvent(new Event('change'));
+      update(true);
+      const hasTrendOff = !!document.querySelector('path.trend-line');
+      ok('showTrend off hides trend', hasTrendOff === false);
+      showTrend.checked = true; showTrend.dispatchEvent(new Event('change'));
+      update(true);
+    }
+
+    // Combined rule validation tests
+    // 1) In Total view, changing a track's decay changes the paths even with same global (combined = global+track)
+    document.getElementById('activeTrack').value='TOTAL'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+    document.getElementById('decayVal').value = 0.01; document.getElementById('decayVal').dispatchEvent(new Event('input'));
+    update(true);
+    const firstPathBefore = document.querySelector('g.tracks path.track')?.getAttribute('d')||'';
+    if (state.tracks[0]) { state.tracks[0].decay = 0.02; save(); }
+    update(true);
+    const firstPathAfter = document.querySelector('g.tracks path.track')?.getAttribute('d')||'';
+    ok('Total uses combined decay (track.decay affects Total)', firstPathBefore !== firstPathAfter);
+
+    // 1b) In Total view, if track.decay = 0, increasing global still changes the path (additive)
+    if (state.tracks[0]) { state.tracks[0].decay = 0; save(); }
+    update(true);
+    const pathBeforeGlobal = document.querySelector('g.tracks path.track')?.getAttribute('d')||'';
+    state.decay = (state.decay||0) + 0.005; save(); update(true);
+    const pathAfterGlobal = document.querySelector('g.tracks path.track')?.getAttribute('d')||'';
+    ok('Total additive: global alone moves the path when track.decay=0', pathBeforeGlobal !== pathAfterGlobal);
+
+    // 2) In Track tab: with includeGlobal OFF, line ignores global (uses per-track); trend uses combined (changes with global)
+    state.view.trackIncludeGlobal = false; save();
+    document.getElementById('activeTrack').value='0'; document.getElementById('activeTrack').dispatchEvent(new Event('change'));
+    update(true);
+    const lineBefore = document.querySelector('g.tracks path.track')?.getAttribute('d')||'';
+    const trendBefore = document.querySelector('g.trend path.trend-line')?.getAttribute('d')||'';
+    state.decay = (state.decay||0) + 0.005; save(); update(true);
+    const lineAfter = document.querySelector('g.tracks path.track')?.getAttribute('d')||'';
+    const trendAfter = document.querySelector('g.trend path.trend-line')?.getAttribute('d')||'';
+    ok('Track lines use per-track only (unchanged by global)', lineBefore === lineAfter);
+    ok('Track trend uses combined (changes with global)', trendBefore !== trendAfter);
+
+    // 3) Track-tab toggle test: OFF -> ON should change path (include global)
+    const incBox = document.getElementById('includeGlobalInTrack');
+    if (incBox) {
+      state.decay = 0.02; if (state.tracks[0]) state.tracks[0].decay = 0; save(); update(true);
+      const pathOff = document.querySelector('g.tracks path.track')?.getAttribute('d') || '';
+      incBox.checked = true; incBox.dispatchEvent(new Event('change')); update(true);
+      const pathOn = document.querySelector('g.tracks path.track')?.getAttribute('d') || '';
+      ok('Track tab toggle: OFF->ON changes path (includes global)', pathOff !== pathOn);
+      incBox.checked = false; incBox.dispatchEvent(new Event('change'));
+    }
+
+    document.getElementById('testbox').textContent=msgs.join('  |  ');
+  })();
 
 })();
 </script>
