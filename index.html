@@ -1924,6 +1924,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   populateProjectsMenu();
   if (typeof setSaveButtonLabel === 'function') setSaveButtonLabel();
 
+	maybeLoadDefaultProject();
+
   // 3) Existing wiring for the dropdown behaviour
   const sel = document.getElementById('projectsMenu');
   if (sel){
