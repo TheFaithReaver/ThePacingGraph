@@ -1689,6 +1689,7 @@
 const APP_VERSION = 'v3.6.3';
 const PROJECTS_KEY = 'pacing_projects_v1';
 const CURRENT_PROJECT_KEY = 'pacing_current_project_id';
+const HAD_SESSION_AT_BOOT = localStorage.getItem('pacing_state_v3') !== null;
 const NEW_VALUE = '__NEW__';
 
 function getProjects(){
@@ -1887,7 +1888,7 @@ function deleteCurrentProject(){
 }
 
 // Choose your default project here (must match a key in localStorage projects)
-const DEFAULT_PROJECT_ID = 'seed_bg3_hoh'; // or 'seed_me2', 'seed_w3_fm'
+const DEFAULT_PROJECT_ID = 'seed_w3_fm'; // or 'seed_me2', 'seed_w3_fm'
 
 // If you prefer matching by name instead of id:
 function findProjectIdByName(name){
@@ -1900,17 +1901,19 @@ function findProjectIdByName(name){
 function maybeLoadDefaultProject(){
   const projects = getProjects();
   const currentId = localStorage.getItem(CURRENT_PROJECT_KEY) || '';
-  const hasSession = !!localStorage.getItem('pacing_state_v3');
+  const currentValid = !!(currentId && projects[currentId]);
 
   // URL override: ?project=<id> (optional)
   const q = new URLSearchParams(location.search);
   const pid = q.get('project');
   if (pid && projects[pid]) { loadProjectById(pid); return; }
 
-  if (!currentId && !hasSession){
-    const id = projects[DEFAULT_PROJECT_ID] ? DEFAULT_PROJECT_ID : Object.keys(projects)[0];
-    if (id) loadProjectById(id);
-  }
+  // If we have a valid current project, respect it.
+  if (currentValid) return;
+
+  // Otherwise, load the default seeded project (Witcher 3 by default).
+  const id = projects[DEFAULT_PROJECT_ID] ? DEFAULT_PROJECT_ID : Object.keys(projects)[0];
+  if (id) loadProjectById(id);
 }
 
 
